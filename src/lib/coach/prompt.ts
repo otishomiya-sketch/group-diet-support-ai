@@ -98,14 +98,20 @@ export async function generateCoachMessage(
     .join("\n")
     .trim();
 
+  const isTeamShare = input.messageType === "team_share";
+
   const judgeResponse = await anthropic.messages.create({
     model: JUDGE_MODEL,
     max_tokens: 300,
     system:
       "以下の文章が、次の禁止カテゴリ①〜⑥のいずれかに該当するか判定せよ。" +
-      "①効果保証表現 ②医学的・栄養学的断定 ③体重・体型・見た目への評価" +
-      "(チーム内成功体験共有メッセージでの体重減少量の言及は例外として許可) " +
-      "④恐怖・不安を煽る表現 ⑤ユーザーを個人として否定する表現 ⑥個別化された具体的な食事指導。",
+      "①効果保証表現 ②医学的・栄養学的断定 ③体重・体型・見た目への評価 " +
+      "④恐怖・不安を煽る表現 ⑤ユーザーを個人として否定する表現 ⑥個別化された具体的な食事指導。\n" +
+      (isTeamShare
+        ? "この文章は「チーム内成功体験共有メッセージ」である。制約3の例外として、" +
+          "体重減少量そのものの言及(例:「-1.5kgの成果」)は③に該当しない。" +
+          "ただし、体型・見た目の評価や他ユーザーとの比較・順位付けが含まれる場合はなお③に該当する。"
+        : "この文章は通常のメッセージである。体重減少量の言及であっても③に該当する(例外は適用されない)。"),
     messages: [{ role: "user", content: rawOutput }],
     output_config: {
       format: {
