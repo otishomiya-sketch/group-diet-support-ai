@@ -8,5 +8,8 @@ export async function GET() {
   const session = await requireSessionUserId();
   if (isErrorResponse(session)) return session;
 
-  return NextResponse.json({ linkCode: `link:${session.userId}` });
+  const basicId = process.env.LINE_OFFICIAL_ACCOUNT_ID;
+  const addFriendUrl = basicId ? `https://line.me/R/ti/p/%40${basicId}` : null;
+
+  return NextResponse.json({ linkCode: `link:${session.userId}`, addFriendUrl });
 }

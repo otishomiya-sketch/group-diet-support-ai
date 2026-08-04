@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { requireSessionUserId, isErrorResponse } from "@/lib/auth-helpers";
 import { recordStepCount, getStepHistory, type StepSource } from "@/lib/vitals/steps";
 
-const VALID_SOURCES = new Set<StepSource>(["healthkit", "google_fit"]);
+const VALID_SOURCES = new Set<StepSource>(["healthkit", "google_fit", "manual"]);
 
 export async function POST(request: Request) {
   const session = await requireSessionUserId();

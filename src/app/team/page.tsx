@@ -14,16 +14,69 @@ interface TeamMessage {
   sentAt: string;
 }
 
+interface TeamData {
+  formationType: string;
+  inviteCode: string | null;
+  capacity: number;
+  members: TeamMember[];
+  messages: TeamMessage[];
+}
+
+const inputClass =
+  "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
+
 export default function TeamPage() {
-  const [team, setTeam] = useState<{ members: TeamMember[]; messages: TeamMessage[] } | null | undefined>(
-    undefined,
-  );
+  const [team, setTeam] = useState<TeamData | null | undefined>(undefined);
+  const [joinCode, setJoinCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    let ignore = false;
     fetch("/api/team")
       .then((res) => res.json())
-      .then((data) => setTeam(data.team));
-  }, []);
+      .then((data) => {
+        if (!ignore) setTeam(data.team);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [refreshKey]);
+
+  async function createFriendTeam() {
+    setError(null);
+    const res = await fetch("/api/team/create-friend", { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "作成に失敗しました。");
+      return;
+    }
+    setRefreshKey((k) => k + 1);
+  }
+
+  async function joinTeam(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const res = await fetch("/api/team/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inviteCode: joinCode }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "参加に失敗しました。");
+      return;
+    }
+    setRefreshKey((k) => k + 1);
+  }
+
+  function copyInviteCode() {
+    if (!team?.inviteCode) return;
+    navigator.clipboard.writeText(team.inviteCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   if (team === undefined) {
     return <div className="px-6 py-16 text-zinc-500">読み込み中...</div>;
@@ -31,8 +84,49 @@ export default function TeamPage() {
 
   if (team === null) {
     return (
-      <div className="px-6 py-16 text-zinc-500">
-        まだチームに所属していません。マッチングバッチの実行をお待ちください。
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">チーム</h1>
+        <p className="text-zinc-500">
+          まだチームに所属していません。友達を誘って自分のチームを作るか、もらった招待コードで参加してください。
+        </p>
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+          <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            友達を誘ってチームを作る
+          </h2>
+          <button
+            onClick={createFriendTeam}
+            className="rounded-full bg-zinc-900 px-5 py-2 text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-black"
+          >
+            チームを作成する
+          </button>
+        </section>
+
+        <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+          <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            招待コードで参加する
+          </h2>
+          <form onSubmit={joinTeam} className="flex gap-3">
+            <input
+              className={inputClass}
+              placeholder="招待コード(例:AB23CD45)"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              className="rounded-full border border-zinc-300 px-5 py-2 text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
+            >
+              参加
+            </button>
+          </form>
+        </section>
+
+        <p className="text-sm text-zinc-500">
+          自分でチームを作らない場合は、BMIマッチングバッチによって自動的にソロ参加者同士のチームに割り当てられます。
+        </p>
       </div>
     );
   }
@@ -40,6 +134,28 @@ export default function TeamPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">チーム</h1>
+
+      {team.formationType === "friend" && team.inviteCode && (
+        <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+          <h2 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            友達を招待する
+          </h2>
+          <p className="mb-3 text-sm text-zinc-500">
+            このコードを友達に共有してもらうと、同じチームに参加できます(定員{team.capacity}名)。
+          </p>
+          <div className="flex items-center gap-3">
+            <code className="rounded bg-zinc-100 px-4 py-2 text-lg tracking-wider dark:bg-zinc-900">
+              {team.inviteCode}
+            </code>
+            <button
+              onClick={copyInviteCode}
+              className="rounded-full border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            >
+              {copied ? "コピーしました" : "コピー"}
+            </button>
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">メンバー</h2>
@@ -66,6 +182,9 @@ export default function TeamPage() {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">コーチからのメッセージ</h2>
+        {team.messages.length === 0 && (
+          <p className="text-sm text-zinc-500">まだメッセージはありません。</p>
+        )}
         <ul className="flex flex-col gap-3">
           {team.messages.map((m, i) => (
             <li key={i} className="rounded-md bg-zinc-100 px-4 py-3 text-sm dark:bg-zinc-900">

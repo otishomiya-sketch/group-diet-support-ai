@@ -20,7 +20,11 @@ export async function GET() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [members, todayCheckIns, recentMessages] = await Promise.all([
+  const [team, members, todayCheckIns, recentMessages] = await Promise.all([
+    prisma.team.findUniqueOrThrow({
+      where: { id: membership.teamId },
+      select: { formationType: true, inviteCode: true, capacity: true },
+    }),
     prisma.user.findMany({
       where: { id: { in: memberUserIds } },
       select: { id: true, displayName: true },
@@ -42,6 +46,9 @@ export async function GET() {
   return NextResponse.json({
     team: {
       id: membership.teamId,
+      formationType: team.formationType,
+      inviteCode: team.formationType === "friend" ? team.inviteCode : null,
+      capacity: team.capacity,
       members: members.map((m) => ({
         userId: m.id,
         displayName: m.displayName,

@@ -129,6 +129,9 @@ model Team {
   status        String // "matching" | "active"
   createdAt     DateTime @default(now())
 
+  // formationType="friend"のチームのみ発行される招待コード(3.4節・4.1節の離脱導線と対になる参加導線)
+  inviteCode String? @unique
+
   memberships   TeamMembership[]
   coachMessages CoachMessage[]
 

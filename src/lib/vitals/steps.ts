@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
 // 3.7節:歩数はHealthKit/Google Fit経由で取得し、記録・グラフ表示のみを行う。
-export type StepSource = "healthkit" | "google_fit";
+// "manual"はHealthKit等の自動連携(ネイティブアプリが必要)が未整備な間の代替手段。
+export type StepSource = "healthkit" | "google_fit" | "manual";
 
 function normalizeToDate(dateIso: string): Date {
   const d = new Date(dateIso);

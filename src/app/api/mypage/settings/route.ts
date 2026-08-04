@@ -23,10 +23,13 @@ export async function GET() {
       notifyScheduled: true,
       notifyTeamShare: true,
       notifyIndividualSupport: true,
+      lineUserIdHash: true,
     },
   });
 
-  return NextResponse.json({ settings: user });
+  const { lineUserIdHash, ...settings } = user;
+
+  return NextResponse.json({ settings, lineLinked: lineUserIdHash !== null });
 }
 
 export async function PATCH(request: Request) {
