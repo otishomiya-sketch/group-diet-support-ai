@@ -105,10 +105,22 @@ export async function generateCoachMessage(
       "以下の文章が、次の禁止カテゴリ①〜⑥のいずれかに該当するか判定せよ。" +
       "①効果保証表現 ②医学的・栄養学的断定 ③体重・体型・見た目への評価" +
       "(チーム内成功体験共有メッセージでの体重減少量の言及は例外として許可) " +
-      "④恐怖・不安を煽る表現 ⑤ユーザーを個人として否定する表現 ⑥個別化された具体的な食事指導。\n" +
-      "必ず次のJSON形式のみで回答せよ(説明文は不要): " +
-      '{"violates": boolean, "categories": string[]}',
+      "④恐怖・不安を煽る表現 ⑤ユーザーを個人として否定する表現 ⑥個別化された具体的な食事指導。",
     messages: [{ role: "user", content: rawOutput }],
+    output_config: {
+      format: {
+        type: "json_schema",
+        schema: {
+          type: "object",
+          properties: {
+            violates: { type: "boolean" },
+            categories: { type: "array", items: { type: "string" } },
+          },
+          required: ["violates", "categories"],
+          additionalProperties: false,
+        },
+      },
+    },
   });
 
   const judgeText = judgeResponse.content
