@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/bmi-matching", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/scheduled-message", "schedule": "0 21 * * *" },
+    { "path": "/api/cron/individual-support", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/safety-layer", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/retention", "schedule": "0 16 * * *" }
+  ]
+}
