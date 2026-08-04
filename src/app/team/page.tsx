@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface TeamMember {
   userId: string;
@@ -25,11 +26,13 @@ interface TeamData {
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
 
-export default function TeamPage() {
+function TeamPageInner() {
+  const searchParams = useSearchParams();
   const [team, setTeam] = useState<TeamData | null | undefined>(undefined);
   const [joinCode, setJoinCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => searchParams.get("joinError"));
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -76,6 +79,13 @@ export default function TeamPage() {
     navigator.clipboard.writeText(team.inviteCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function copyInviteLink() {
+    if (!team?.inviteCode) return;
+    navigator.clipboard.writeText(`${window.location.origin}/team/join?code=${team.inviteCode}`);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   }
 
   if (team === undefined) {
@@ -134,6 +144,7 @@ export default function TeamPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">チーム</h1>
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {team.formationType === "friend" && team.inviteCode && (
         <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
@@ -141,8 +152,18 @@ export default function TeamPage() {
             友達を招待する
           </h2>
           <p className="mb-3 text-sm text-zinc-500">
-            このコードを友達に共有してもらうと、同じチームに参加できます(定員{team.capacity}名)。
+            下のリンクを友達に送るだけで、登録・ログイン後に自動でこのチームに参加できます(定員
+            {team.capacity}名)。
           </p>
+          <div className="mb-3 flex items-center gap-3">
+            <button
+              onClick={copyInviteLink}
+              className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-black"
+            >
+              {linkCopied ? "リンクをコピーしました" : "招待リンクをコピー"}
+            </button>
+          </div>
+          <p className="mb-1 text-xs text-zinc-500">コードを直接伝えたい場合はこちら:</p>
           <div className="flex items-center gap-3">
             <code className="rounded bg-zinc-100 px-4 py-2 text-lg tracking-wider dark:bg-zinc-900">
               {team.inviteCode}
@@ -195,5 +216,13 @@ export default function TeamPage() {
         </ul>
       </section>
     </div>
+  );
+}
+
+export default function TeamPage() {
+  return (
+    <Suspense fallback={null}>
+      <TeamPageInner />
+    </Suspense>
   );
 }

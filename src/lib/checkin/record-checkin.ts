@@ -2,22 +2,33 @@ import { prisma } from "@/lib/prisma";
 import { decryptNumber, encryptNumber } from "@/lib/crypto/field-encryption";
 import { updateCurrentWeight } from "@/lib/sensitive/user-profile";
 import { triggerWeightShareIfApplicable } from "@/lib/group/weight-share";
+import { estimateMealCalories } from "@/lib/nutrition/estimate-calories";
 
 export type CheckInSource = "line" | "app";
 
 export interface RecordMealCheckInInput {
   userId: string;
   imageUrl: string;
+  imageBuffer: Buffer;
+  contentType: string;
   source: CheckInSource;
 }
 
-/** 3.3節:食事画像チェックイン。送信回数の制限は設けない。 */
+/**
+ * 3.3節:食事画像チェックイン。送信回数の制限は設けない。
+ * 画像からのカロリー概算(運営判断によりAI画像解析を採用)。推定に失敗しても
+ * チェックイン自体は記録し、estimatedCalories/foodDescriptionはnullのままとする。
+ */
 export async function recordMealCheckIn(input: RecordMealCheckInInput) {
+  const estimate = await estimateMealCalories(input.imageBuffer, input.contentType);
+
   return prisma.checkIn.create({
     data: {
       userId: input.userId,
       type: "meal",
       imageUrl: input.imageUrl,
+      estimatedCalories: estimate?.estimatedCalories ?? null,
+      foodDescription: estimate?.foodDescription ?? null,
       source: input.source,
     },
   });

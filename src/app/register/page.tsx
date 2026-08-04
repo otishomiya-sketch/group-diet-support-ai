@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("code");
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -47,7 +49,7 @@ export default function RegisterPage() {
         return;
       }
       setWarnings(data.warnings ?? []);
-      router.push("/login");
+      router.push(inviteCode ? `/login?code=${encodeURIComponent(inviteCode)}` : "/login");
     } catch {
       setError("通信エラーが発生しました。");
     } finally {
@@ -58,6 +60,12 @@ export default function RegisterPage() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">目標設定・新規登録</h1>
+
+      {inviteCode && (
+        <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+          チーム招待コード「{inviteCode}」を検出しました。登録後、自動でこのチームに参加します。
+        </p>
+      )}
 
       {error && (
         <p className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -211,5 +219,13 @@ export default function RegisterPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }

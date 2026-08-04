@@ -89,9 +89,6 @@ model User {
   coachMessages   CoachMessage[]
   safetyFlags     SafetyFlag[]
   stagnationState StagnationState?
-  vitalSettings   VitalThresholdSetting?
-  stepRecords     StepRecord[]
-  vitalEvents     VitalThresholdEvent[]
 
   @@index([bmi])
   @@index([agencyReferralCode])
@@ -106,6 +103,11 @@ model CheckIn {
   type   String // "meal" | "weight"
 
   imageUrl String? // meal時のみ。Supabase Storage参照(退会後90日で削除、7.2節)
+
+  // meal時のみ:AIによる画像解析でのカロリー推定値(あくまで概算)。food画像そのものではなく
+  // 推定結果のみを保持するため非暗号化。解析失敗時はnullのまま。
+  estimatedCalories Int?
+  foodDescription   String?
 
   // weight時のみ(暗号化対象)。weightDeltaは「直近の体重報告との差分」(負値=減少、v3 1.2節)
   weightValueEncrypted String?
@@ -240,40 +242,3 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 }
 
-// ---------------------------------------------------------------------------
-// バイタル・活動量トラッキング(3.7節、優先度低)
-// ---------------------------------------------------------------------------
-model StepRecord {
-  id        String   @id @default(cuid())
-  userId    String
-  date      DateTime // 日付単位(時刻は00:00に正規化)
-  stepCount Int
-  source    String // "healthkit" | "google_fit"
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@unique([userId, date, source])
-}
-
-model VitalThresholdSetting {
-  userId              String    @id
-  heartRateUpperBound Int?
-  heartRateLowerBound Int?
-  updatedAt           DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
-}
-
-model VitalThresholdEvent {
-  id         String   @id @default(cuid())
-  userId     String
-  metric     String // "heart_rate"
-  value      Float
-  boundType  String // "upper" | "lower"
-  notifiedAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([userId, metric])
-}

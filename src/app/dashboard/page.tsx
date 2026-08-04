@@ -4,6 +4,10 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { getUserProfile } from "@/lib/sensitive/user-profile";
 import { calculateBmr, calculateDailyCalorieTarget } from "@/lib/health/bmr";
+import { getCalorieTrend, getWeightTrend } from "@/lib/checkin/trends";
+import { TrendCharts } from "@/components/dashboard/TrendCharts";
+
+const TREND_WINDOW_DAYS = 90;
 
 function ageFromBirthDate(birthDate: Date): number {
   const diff = Date.now() - birthDate.getTime();
@@ -29,6 +33,11 @@ export default async function DashboardPage() {
   });
   const calorieTarget = calculateDailyCalorieTarget(bmr, profile.activityLevel);
   const remainingKg = profile.currentWeight - profile.targetWeight;
+
+  const [weightSeries, calorieSeries] = await Promise.all([
+    getWeightTrend(session.user.id, TREND_WINDOW_DAYS),
+    getCalorieTrend(session.user.id, TREND_WINDOW_DAYS),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
@@ -62,6 +71,12 @@ export default async function DashboardPage() {
         </dl>
       </section>
 
+      <TrendCharts
+        weightSeries={weightSeries}
+        calorieSeries={calorieSeries}
+        calorieTargetPerDay={calorieTarget}
+      />
+
       <nav className="flex flex-wrap gap-3">
         <Link
           href="/checkin"
@@ -74,12 +89,6 @@ export default async function DashboardPage() {
           className="rounded-full border border-zinc-300 px-5 py-2 text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
         >
           チーム
-        </Link>
-        <Link
-          href="/vitals"
-          className="rounded-full border border-zinc-300 px-5 py-2 text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
-        >
-          バイタル
         </Link>
         <Link
           href="/mypage/settings"

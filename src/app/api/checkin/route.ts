@@ -38,7 +38,13 @@ export async function POST(request: Request) {
     }
     const buffer = Buffer.from(imageBase64, "base64");
     const imageUrl = await uploadMealImage(session.userId, buffer, contentType);
-    const checkIn = await recordMealCheckIn({ userId: session.userId, imageUrl, source: "app" });
+    const checkIn = await recordMealCheckIn({
+      userId: session.userId,
+      imageUrl,
+      imageBuffer: buffer,
+      contentType,
+      source: "app",
+    });
     return NextResponse.json({ ok: true, checkIn });
   }
 

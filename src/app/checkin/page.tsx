@@ -10,6 +10,10 @@ export default function CheckInPage() {
   const [weightMessage, setWeightMessage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [mealMessage, setMealMessage] = useState<string | null>(null);
+  const [mealEstimate, setMealEstimate] = useState<{
+    foodDescription: string | null;
+    estimatedCalories: number | null;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +55,7 @@ export default function CheckInPage() {
     if (!imageFile) return;
     setSubmitting(true);
     setMealMessage(null);
+    setMealEstimate(null);
     try {
       const base64 = await fileToBase64(imageFile);
       const res = await fetch("/api/checkin", {
@@ -68,6 +73,12 @@ export default function CheckInPage() {
         return;
       }
       setMealMessage("食事画像を送信しました。");
+      if (data.checkIn?.estimatedCalories != null || data.checkIn?.foodDescription) {
+        setMealEstimate({
+          foodDescription: data.checkIn.foodDescription ?? null,
+          estimatedCalories: data.checkIn.estimatedCalories ?? null,
+        });
+      }
       setImageFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } finally {
@@ -107,7 +118,15 @@ export default function CheckInPage() {
         <p className="mb-3 text-sm text-zinc-500">
           食事の写真を撮って送信してください。回数の制限はありません。
         </p>
-        {mealMessage && <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{mealMessage}</p>}
+        {mealMessage && <p className="mb-1 text-sm text-zinc-600 dark:text-zinc-400">{mealMessage}</p>}
+        {mealEstimate && (
+          <p className="mb-3 text-sm text-zinc-500">
+            {mealEstimate.foodDescription && <>{mealEstimate.foodDescription} / </>}
+            {mealEstimate.estimatedCalories != null
+              ? `推定 ${mealEstimate.estimatedCalories} kcal(AIによる概算です)`
+              : "カロリーの推定はできませんでした。"}
+          </p>
+        )}
         <form onSubmit={submitMeal} className="flex flex-col gap-4">
           <input
             ref={fileInputRef}

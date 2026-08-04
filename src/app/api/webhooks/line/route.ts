@@ -65,6 +65,12 @@ async function handleLineEvent(event: LineEvent): Promise<void> {
     if (!userId) return;
     const imageBuffer = await fetchLineImageContent(event.message.id);
     const imageUrl = await uploadMealImage(userId, imageBuffer, "image/jpeg");
-    await recordMealCheckIn({ userId, imageUrl, source: "line" });
+    await recordMealCheckIn({
+      userId,
+      imageUrl,
+      imageBuffer,
+      contentType: "image/jpeg",
+      source: "line",
+    });
   }
 }
