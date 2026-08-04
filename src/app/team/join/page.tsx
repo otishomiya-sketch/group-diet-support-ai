@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { auth } from "@/auth";
 import { joinTeamByCode } from "@/lib/group/join-team";
+import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
 
 // 招待コードを含む共有URL(/team/join?code=XXXX)の着地ページ。
 // 未ログインの場合は登録/ログインへ、ログイン済みの場合はその場で参加処理を行う。
@@ -60,6 +61,7 @@ export default async function TeamJoinPage({
       >
         チームページへ
       </Link>
+      <BackToDashboardLink />
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
+
 interface TeamMember {
   userId: string;
   displayName: string;
@@ -95,6 +97,7 @@ function TeamPageInner() {
   if (team === null) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
+        <BackToDashboardLink />
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">チーム</h1>
         <p className="text-zinc-500">
           まだチームに所属していません。友達を誘って自分のチームを作るか、もらった招待コードで参加してください。
@@ -105,6 +108,9 @@ function TeamPageInner() {
           <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
             友達を誘ってチームを作る
           </h2>
+          <p className="mb-3 text-sm text-zinc-500">
+            あなたを含む最大8名までの「チーム」を新しく作ります。作成後、専用の招待リンク・招待コードが発行されるので、それを友達に送って参加してもらいます。
+          </p>
           <button
             onClick={createFriendTeam}
             className="rounded-full bg-zinc-900 px-5 py-2 text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-black"
@@ -117,6 +123,9 @@ function TeamPageInner() {
           <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
             招待コードで参加する
           </h2>
+          <p className="mb-3 text-sm text-zinc-500">
+            友達からチームへの招待リンクを開けなかった場合は、友達から直接教えてもらった招待コードをここに入力すると、そのチームに参加できます。
+          </p>
           <form onSubmit={joinTeam} className="flex gap-3">
             <input
               className={inputClass}
@@ -143,6 +152,7 @@ function TeamPageInner() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
+      <BackToDashboardLink />
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">チーム</h1>
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
@@ -152,9 +162,9 @@ function TeamPageInner() {
             友達を招待する
           </h2>
           <p className="mb-3 text-sm text-zinc-500">
-            下のリンクを友達に送るだけで、登録・ログイン後に自動でこのチームに参加できます(定員
-            {team.capacity}名)。
+            これは、あなたの今のチーム(現在{team.members.length}/{team.capacity}名)へ友達を招待するためのものです。招待された友達がこのアプリに登録(またはログイン)すると、自動的にあなたと同じチームのメンバーになり、お互いの日々の達成状況やAIコーチからの応援メッセージを共有できるようになります。
           </p>
+          <p className="mb-1 text-xs font-medium text-zinc-500">① まずはこのリンクを送るのがおすすめです:</p>
           <div className="mb-3 flex items-center gap-3">
             <button
               onClick={copyInviteLink}
@@ -163,7 +173,9 @@ function TeamPageInner() {
               {linkCopied ? "リンクをコピーしました" : "招待リンクをコピー"}
             </button>
           </div>
-          <p className="mb-1 text-xs text-zinc-500">コードを直接伝えたい場合はこちら:</p>
+          <p className="mb-1 text-xs font-medium text-zinc-500">
+            ② リンクが開けない場合は、代わりにこの招待コードを伝え、友達に「チーム」画面の「招待コードで参加する」に入力してもらってください:
+          </p>
           <div className="flex items-center gap-3">
             <code className="rounded bg-zinc-100 px-4 py-2 text-lg tracking-wider dark:bg-zinc-900">
               {team.inviteCode}

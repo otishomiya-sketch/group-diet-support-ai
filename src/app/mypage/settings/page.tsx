@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
+
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
 
@@ -64,6 +66,7 @@ export default function MyPageSettings() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
+      <BackToDashboardLink />
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">設定</h1>
       {saved && <p className="text-sm text-green-600 dark:text-green-400">保存しました。</p>}
 

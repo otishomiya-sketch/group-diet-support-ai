@@ -6,6 +6,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
 
+const ACTIVITY_LEVEL_OPTIONS = [
+  {
+    value: "low",
+    label: "低い",
+    description: "デスクワーク中心で、日常的な運動はほとんどしない",
+  },
+  {
+    value: "medium",
+    label: "普通",
+    description: "立ち仕事や家事が多い、または散歩などの軽い運動を週に数回行う",
+  },
+  {
+    value: "high",
+    label: "高い",
+    description: "力仕事をしている、または汗をかく運動を習慣的に行っている",
+  },
+];
+
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -152,12 +170,19 @@ function RegisterForm() {
           </label>
           <label className="flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
             性別
-            <input
+            <select
               className={inputClass}
               value={form.gender}
               onChange={(e) => update("gender", e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>
+                選択してください
+              </option>
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+              <option value="other">その他・回答しない</option>
+            </select>
           </label>
           <label className="flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
             生年月日
@@ -171,18 +196,32 @@ function RegisterForm() {
           </label>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
-          活動量レベル
-          <select
-            className={inputClass}
-            value={form.activityLevel}
-            onChange={(e) => update("activityLevel", e.target.value)}
-          >
-            <option value="low">低</option>
-            <option value="medium">中</option>
-            <option value="high">高</option>
-          </select>
-        </label>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm text-zinc-600 dark:text-zinc-400">活動量レベル</legend>
+          {ACTIVITY_LEVEL_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className={
+                form.activityLevel === opt.value
+                  ? "flex cursor-pointer items-start gap-3 rounded-md border border-zinc-900 bg-zinc-50 px-3 py-2 dark:border-zinc-50 dark:bg-zinc-900"
+                  : "flex cursor-pointer items-start gap-3 rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700"
+              }
+            >
+              <input
+                type="radio"
+                name="activityLevel"
+                value={opt.value}
+                checked={form.activityLevel === opt.value}
+                onChange={(e) => update("activityLevel", e.target.value)}
+                className="mt-1"
+              />
+              <span className="flex flex-col">
+                <span className="font-medium text-zinc-900 dark:text-zinc-50">{opt.label}</span>
+                <span className="text-xs text-zinc-500">{opt.description}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
 
         <input
           className={inputClass}
