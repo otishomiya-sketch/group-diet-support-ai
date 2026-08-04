@@ -1,0 +1,276 @@
+// グループダイエット支援AI Prismaスキーマ
+// 開発指示書v3(グループダイエット支援AI_開発指示書_v3.md)の1章に対応。
+//
+// 機微データの扱い(7.3節/6.1節):height/gender/birthDate/currentWeight/targetWeight/
+// lineUserId/CheckIn.weightValue・weightDeltaは、DBには平文で保持せずアプリケーション層で
+// 暗号化した文字列として保存する(src/lib/crypto/field-encryption.ts)。
+// フィールド名に *Encrypted サフィックスを付け、生のPrismaクライアントを直接触ると
+// 暗号文しか見えないようにしている。読み書きは必ず src/lib/sensitive/ 配下の
+// リポジトリ層を通すこと。
+//
+// bmi は例外的に平文で保持する(1.1節の実装上の注意)。BMIマッチングバッチが
+// SQLレベルでソートする必要があるための運用上の派生値であり、UI表示は
+// bmiDisplayOptIn に従って別途制御する。
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+model User {
+  id           String @id @default(cuid())
+  email        String @unique
+  passwordHash String
+  displayName  String
+
+  // LINE連携(3.6節・8章)。lineUserIdHashは検索用ブラインドインデックス(HMAC、一方向)、
+  // lineUserIdEncryptedはLINE Push API呼び出し時に復号して使う暗号文。
+  lineUserIdHash      String? @unique
+  lineUserIdEncrypted String?
+
+  // 機微データ(7.3節・暗号化対象)
+  heightEncrypted        String
+  genderEncrypted        String
+  birthDateEncrypted     String
+  currentWeightEncrypted String
+  targetWeightEncrypted  String
+
+  activityLevel String // "low" | "medium" | "high"
+  targetDate    DateTime
+
+  // 3.8節 low_bmi_target_retry 検知用。BMI18.5未満の状態での目標体重再設定回数
+  targetWeightRevisionCount Int @default(0)
+
+  // 逆算エンジンの派生値(2.2節参照。bmiは平文、上記コメント参照)
+  bmi      Float?
+  bmrCache Float?
+
+  bmiDisplayOptIn       Boolean @default(false)
+  weightShareOptOut     Boolean @default(false)
+  weightReportFrequency String  @default("daily") // "daily" | "every_2_3_days" | "weekly"(1.1節・v3)
+
+  // 3.6節:定時配信・リアルタイム通知(チーム共有・個別支援)を別々にON/OFFできる設定
+  notifyScheduled          Boolean @default(true)
+  notifyTeamShare          Boolean @default(true)
+  notifyIndividualSupport  Boolean @default(true)
+
+  agreedToTerms                   Boolean   @default(false)
+  agreedToTermsAt                 DateTime?
+  agreedToWeightShareDisclosure   Boolean   @default(false)
+  agreedToWeightShareDisclosureAt DateTime?
+
+  agencyReferralCode String?
+
+  role String @default("member") // "member" | "operator" | "agency"(5章アクセス制御用)
+
+  // 1.3節:チーム参加希望。"solo" のみBMIマッチングバッチの対象(friendは招待制、本書スコープ外の運用)
+  teamJoinPreference String @default("solo")
+
+  // 3.5節:代理店ダッシュボード用。role="agency"のユーザーのみが持つ自身の紹介コード。
+  // 一般会員のagencyReferralCode(紹介元コード)とは別物。
+  ownAgencyCode String? @unique
+
+  // 9.4節:決済連携は法務確認待ち・未確定のため暫定フィールド。"trial" | "active" | "cancelled"
+  subscriptionStatus String @default("trial")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  withdrawnAt DateTime?
+
+  checkIns        CheckIn[]
+  teamMemberships TeamMembership[]
+  coachMessages   CoachMessage[]
+  safetyFlags     SafetyFlag[]
+  stagnationState StagnationState?
+  vitalSettings   VitalThresholdSetting?
+  stepRecords     StepRecord[]
+  vitalEvents     VitalThresholdEvent[]
+
+  @@index([bmi])
+  @@index([agencyReferralCode])
+}
+
+// ---------------------------------------------------------------------------
+// CheckIn(3.3節・1.2節)
+// ---------------------------------------------------------------------------
+model CheckIn {
+  id     String @id @default(cuid())
+  userId String
+  type   String // "meal" | "weight"
+
+  imageUrl String? // meal時のみ。Supabase Storage参照(退会後90日で削除、7.2節)
+
+  // weight時のみ(暗号化対象)。weightDeltaは「直近の体重報告との差分」(負値=減少、v3 1.2節)
+  weightValueEncrypted String?
+  weightDeltaEncrypted String?
+
+  source    String // "line" | "app"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, type, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Team / TeamMembership(1.3節、v3でleftAt追加)
+// ---------------------------------------------------------------------------
+model Team {
+  id            String   @id @default(cuid())
+  formationType String // "friend" | "solo"
+  capacity      Int      @default(8)
+  status        String // "matching" | "active"
+  createdAt     DateTime @default(now())
+
+  memberships   TeamMembership[]
+  coachMessages CoachMessage[]
+
+  @@index([status])
+}
+
+model TeamMembership {
+  id       String    @id @default(cuid())
+  teamId   String
+  userId   String
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime? // 離脱時に記録。null = 現在も所属中(v3 1.3節)
+
+  team Team @relation(fields: [teamId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, leftAt])
+  @@index([teamId, leftAt])
+}
+
+// ---------------------------------------------------------------------------
+// SafetyFlag(メンタルヘルス安全レイヤー。1.4節、v3で追加)
+// ---------------------------------------------------------------------------
+model SafetyFlag {
+  id     String @id @default(cuid())
+  userId String
+
+  // "rapid_weight_loss" | "low_bmi_target_retry" | "abnormal_checkin_pattern"
+  // | "chronic_stagnation" | "weight_reporting_silence"
+  flagType String
+
+  detectedAt  DateTime  @default(now())
+  resolvedAt  DateTime?
+  actionTaken String? // "resource_message_sent" | "escalated_to_operator" | "no_action_needed"
+
+  // 診断的判断ではなく機械的な閾値判定の根拠のみを記録(1.4節の設計思想)
+  detectionContext Json?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, flagType])
+  @@index([actionTaken])
+}
+
+// ---------------------------------------------------------------------------
+// StagnationState(3.4節の停滞回数・段階発火状況を保持する運用状態)
+// ---------------------------------------------------------------------------
+model StagnationState {
+  userId             String    @id
+  consecutiveNonLoss Int       @default(0) // 直近の連続する「体重報告があった回のうち増加/変化なし」の回数
+  stage1FiredAt      DateTime?
+  stage2FiredAt      DateTime?
+  stage2FireCount    Int       @default(0) // chronic_stagnation判定用(3.8節)
+  lastReportedAt     DateTime?
+  updatedAt          DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// CoachMessage(鬼教官メッセージログ。1.5節)
+// ---------------------------------------------------------------------------
+model CoachMessage {
+  id     String  @id @default(cuid())
+  userId String?
+  teamId String?
+
+  // "scheduled" | "team_share" | "individual_support_stage1" | "individual_support_stage2"
+  // | "safety_resource"
+  messageType String
+
+  rawOutput      String
+  filteredOutput String
+  filterFlags    Json?
+
+  sentAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+  team Team? @relation(fields: [teamId], references: [id])
+
+  @@index([userId, messageType])
+  @@index([teamId, messageType])
+}
+
+// ---------------------------------------------------------------------------
+// AuditLog(5章:運営(管理者)は全データにアクセス可能だが、監査ログを残すこと)
+// ---------------------------------------------------------------------------
+model AuditLog {
+  id             String   @id @default(cuid())
+  operatorUserId String
+  action         String // 例: "view_user_profile" | "resolve_safety_flag"
+  targetUserId   String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([operatorUserId])
+  @@index([targetUserId])
+}
+
+// ---------------------------------------------------------------------------
+// SystemConfig(閾値・フィーチャーフラグをハードコードせず運用調整可能にする置き場。各節の「ハードコード禁止」指示に対応)
+// ---------------------------------------------------------------------------
+model SystemConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// バイタル・活動量トラッキング(3.7節、優先度低)
+// ---------------------------------------------------------------------------
+model StepRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime // 日付単位(時刻は00:00に正規化)
+  stepCount Int
+  source    String // "healthkit" | "google_fit"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date, source])
+}
+
+model VitalThresholdSetting {
+  userId              String    @id
+  heartRateUpperBound Int?
+  heartRateLowerBound Int?
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model VitalThresholdEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  metric     String // "heart_rate"
+  value      Float
+  boundType  String // "upper" | "lower"
+  notifiedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, metric])
+}
