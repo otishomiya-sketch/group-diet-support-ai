@@ -38,3 +38,12 @@ export async function runMealImageDeletionBatch(): Promise<{ deletedCount: numbe
 
   return { deletedCount };
 }
+
+/** LINE Webhookの冪等性チェック用レコードは再送防止のためだけに必要なので、古いものは間引く。 */
+export async function pruneProcessedLineEvents(): Promise<{ prunedCount: number }> {
+  const cutoff = new Date(Date.now() - 7 * MS_PER_DAY);
+  const result = await prisma.processedLineEvent.deleteMany({
+    where: { processedAt: { lt: cutoff } },
+  });
+  return { prunedCount: result.count };
+}

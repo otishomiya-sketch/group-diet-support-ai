@@ -242,3 +242,13 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 }
 
+// ---------------------------------------------------------------------------
+// ProcessedLineEvent(3.6節:LINE Webhookの冪等性担保)
+// LINEはWebhook配信が一定時間内に成功しないと同一イベントを再送する。idにLINEの
+// message.idをそのまま使い、再送されても二重にチェックイン等が作成されないようにする。
+// ---------------------------------------------------------------------------
+model ProcessedLineEvent {
+  id          String   @id
+  processedAt DateTime @default(now())
+}
+

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { Prisma } from "@/generated/prisma/client";
+import { prisma } from "@/lib/prisma";
 import { verifyLineSignature, replyTextMessage, fetchLineImageContent } from "@/lib/line/client";
 import { findUserIdByLineUserId, setLineUserId } from "@/lib/sensitive/user-profile";
 import { recordMealCheckIn, recordWeightCheckIn } from "@/lib/checkin/record-checkin";
@@ -54,9 +56,28 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * LINEはWebhookが一定時間内に成功応答しないと同一イベントを再送する。
+ * message.idをキーに一度だけ処理を許可し、再送による二重チェックインを防ぐ。
+ */
+async function claimMessageOnce(messageId: string): Promise<boolean> {
+  try {
+    await prisma.processedLineEvent.create({ data: { id: messageId } });
+    return true;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function handleLineEvent(event: LineEvent): Promise<void> {
   const lineUserId = event.source?.userId;
   if (!lineUserId || event.type !== "message" || !event.message) return;
+
+  const isFirstDelivery = await claimMessageOnce(event.message.id);
+  if (!isFirstDelivery) return;
 
   try {
     await routeLineMessage(event, lineUserId);
