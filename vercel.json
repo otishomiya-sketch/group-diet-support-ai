@@ -5,6 +5,7 @@
     { "path": "/api/cron/scheduled-message", "schedule": "0 21 * * *" },
     { "path": "/api/cron/individual-support", "schedule": "0 8 * * *" },
     { "path": "/api/cron/safety-layer", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/retention", "schedule": "0 16 * * *" }
+    { "path": "/api/cron/retention", "schedule": "0 16 * * *" },
+    { "path": "/api/cron/checkin-reminder", "schedule": "0 22 * * *" }
   ]
 }

@@ -1,4 +1,4 @@
-import type { User } from "@/generated/prisma/client";
+import { Prisma, type User } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   decryptDate,
@@ -168,14 +168,42 @@ export async function updateGoal(
   });
 }
 
-export async function setLineUserId(userId: string, rawLineUserId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      lineUserIdHash: hashForLookup(rawLineUserId),
-      lineUserIdEncrypted: encryptField(rawLineUserId),
-    },
+export type SetLineUserIdResult = "ok" | "already_linked_elsewhere" | "user_not_found";
+
+/**
+ * このLINEユーザーIDが既に別のアプリアカウントに紐付いている場合は上書きせず
+ * "already_linked_elsewhere" を返す(lineUserIdHashのユニーク制約違反による予期しない
+ * クラッシュを防ぐため、更新前に明示チェックする)。
+ */
+export async function setLineUserId(
+  userId: string,
+  rawLineUserId: string,
+): Promise<SetLineUserIdResult> {
+  const lineUserIdHash = hashForLookup(rawLineUserId);
+
+  const existing = await prisma.user.findUnique({
+    where: { lineUserIdHash },
+    select: { id: true },
   });
+  if (existing && existing.id !== userId) {
+    return "already_linked_elsewhere";
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        lineUserIdHash,
+        lineUserIdEncrypted: encryptField(rawLineUserId),
+      },
+    });
+    return "ok";
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return "user_not_found";
+    }
+    throw error;
+  }
 }
 
 export async function findUserIdByLineUserId(rawLineUserId: string): Promise<string | null> {

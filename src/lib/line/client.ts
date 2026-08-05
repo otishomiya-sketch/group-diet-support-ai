@@ -38,6 +38,32 @@ export async function pushTextMessage(lineUserId: string, text: string): Promise
   }
 }
 
+// Webhookイベントへの応答は、月間割当のあるPush APIではなく無料のReply APIを使う
+// (replyTokenはイベント受信から約1分のみ有効な使い捨てトークン)。
+export async function replyTextMessage(replyToken: string, text: string): Promise<void> {
+  const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!accessToken) {
+    throw new Error("LINE_CHANNEL_ACCESS_TOKEN is not set");
+  }
+
+  const res = await fetch(`${LINE_API_BASE}/message/reply`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      replyToken,
+      messages: [{ type: "text", text }],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`LINE reply failed: ${res.status} ${body}`);
+  }
+}
+
 export async function fetchLineImageContent(messageId: string): Promise<Buffer> {
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken) {

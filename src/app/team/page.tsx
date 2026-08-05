@@ -28,6 +28,16 @@ interface TeamData {
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
 
+function buildInviteMessage(inviteCode: string, inviteUrl: string): string {
+  return (
+    "【グループダイエット支援AI】チームに招待します!\n" +
+    "一緒に体重や食事を報告し合いながら、AIコーチと目標達成を目指しませんか?\n\n" +
+    `▼参加はこちらから\n${inviteUrl}\n\n` +
+    "▼リンクが開けない場合は、アプリの「招待コードで参加する」から下記コードを入力してください\n" +
+    `招待コード: ${inviteCode}`
+  );
+}
+
 function TeamPageInner() {
   const searchParams = useSearchParams();
   const [team, setTeam] = useState<TeamData | null | undefined>(undefined);
@@ -35,6 +45,7 @@ function TeamPageInner() {
   const [error, setError] = useState<string | null>(() => searchParams.get("joinError"));
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [messageCopied, setMessageCopied] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -88,6 +99,30 @@ function TeamPageInner() {
     navigator.clipboard.writeText(`${window.location.origin}/team/join?code=${team.inviteCode}`);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  }
+
+  function shareInviteToLine() {
+    if (!team?.inviteCode) return;
+    const inviteUrl = `${window.location.origin}/team/join?code=${team.inviteCode}`;
+    const text = buildInviteMessage(team.inviteCode, inviteUrl);
+    window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function shareInviteGeneric() {
+    if (!team?.inviteCode) return;
+    const inviteUrl = `${window.location.origin}/team/join?code=${team.inviteCode}`;
+    const text = buildInviteMessage(team.inviteCode, inviteUrl);
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ text });
+      } catch {
+        // ユーザーが共有をキャンセルした場合は何もしない
+      }
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    setMessageCopied(true);
+    setTimeout(() => setMessageCopied(false), 2000);
   }
 
   if (team === undefined) {
@@ -164,29 +199,49 @@ function TeamPageInner() {
           <p className="mb-3 text-sm text-zinc-500">
             これは、あなたの今のチーム(現在{team.members.length}/{team.capacity}名)へ友達を招待するためのものです。招待された友達がこのアプリに登録(またはログイン)すると、自動的にあなたと同じチームのメンバーになり、お互いの日々の達成状況やAIコーチからの応援メッセージを共有できるようになります。
           </p>
-          <p className="mb-1 text-xs font-medium text-zinc-500">① まずはこのリンクを送るのがおすすめです:</p>
-          <div className="mb-3 flex items-center gap-3">
-            <button
-              onClick={copyInviteLink}
-              className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-black"
-            >
-              {linkCopied ? "リンクをコピーしました" : "招待リンクをコピー"}
-            </button>
-          </div>
           <p className="mb-1 text-xs font-medium text-zinc-500">
-            ② リンクが開けない場合は、代わりにこの招待コードを伝え、友達に「チーム」画面の「招待コードで参加する」に入力してもらってください:
+            ① 何に招待しているか・招待リンク・招待コードをまとめたメッセージを、そのままLINEや他のアプリで送れます:
           </p>
-          <div className="flex items-center gap-3">
-            <code className="rounded bg-zinc-100 px-4 py-2 text-lg tracking-wider dark:bg-zinc-900">
-              {team.inviteCode}
-            </code>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
             <button
-              onClick={copyInviteCode}
-              className="rounded-full border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+              onClick={shareInviteToLine}
+              className="inline-flex items-center gap-2 rounded-full bg-[#06C755] px-4 py-2 text-sm text-white hover:opacity-90"
             >
-              {copied ? "コピーしました" : "コピー"}
+              LINEで送る
+            </button>
+            <button
+              onClick={shareInviteGeneric}
+              className="rounded-full border border-zinc-300 px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
+            >
+              {messageCopied ? "メッセージをコピーしました" : "他のアプリで共有 / コピー"}
             </button>
           </div>
+          <details className="text-xs text-zinc-500">
+            <summary className="cursor-pointer select-none font-medium">
+              リンクやコードだけを手動でコピーしたい場合
+            </summary>
+            <div className="mt-3 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={copyInviteLink}
+                  className="rounded-full border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                >
+                  {linkCopied ? "リンクをコピーしました" : "招待リンクをコピー"}
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <code className="rounded bg-zinc-100 px-4 py-2 text-lg tracking-wider dark:bg-zinc-900">
+                  {team.inviteCode}
+                </code>
+                <button
+                  onClick={copyInviteCode}
+                  className="rounded-full border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                >
+                  {copied ? "コピーしました" : "コピー"}
+                </button>
+              </div>
+            </div>
+          </details>
         </section>
       )}
 

@@ -47,7 +47,7 @@ export default async function DashboardPage() {
 
       <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
         <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          目標達成までの逆算(②逆算エンジン)
+          目標達成までの逆算
         </h2>
         <dl className="grid grid-cols-2 gap-y-2 text-sm">
           <dt className="text-zinc-500">現在体重</dt>
