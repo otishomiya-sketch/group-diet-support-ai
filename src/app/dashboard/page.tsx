@@ -6,6 +6,7 @@ import { getUserProfile } from "@/lib/sensitive/user-profile";
 import { calculateBmr, calculateDailyCalorieTarget } from "@/lib/health/bmr";
 import { getCalorieTrend, getWeightTrend } from "@/lib/checkin/trends";
 import { TrendCharts } from "@/components/dashboard/TrendCharts";
+import { LineLinkPrompt } from "@/components/dashboard/LineLinkPrompt";
 
 const TREND_WINDOW_DAYS = 90;
 
@@ -44,6 +45,8 @@ export default async function DashboardPage() {
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
         {profile.displayName} さんのマイページ
       </h1>
+
+      <LineLinkPrompt />
 
       <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
         <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
