@@ -71,6 +71,20 @@ function TeamPageInner() {
     setRefreshKey((k) => k + 1);
   }
 
+  async function leaveTeam() {
+    if (!window.confirm("本当にこのチームを抜けますか?再度参加するには招待コードが必要になります。")) {
+      return;
+    }
+    setError(null);
+    const res = await fetch("/api/team/leave", { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "脱退に失敗しました。");
+      return;
+    }
+    setRefreshKey((k) => k + 1);
+  }
+
   async function joinTeam(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -105,7 +119,11 @@ function TeamPageInner() {
     if (!team?.inviteCode) return;
     const inviteUrl = `${window.location.origin}/team/join?code=${team.inviteCode}`;
     const text = buildInviteMessage(team.inviteCode, inviteUrl);
-    window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    // line.me/R/msg/text はモバイルのLINEアプリ直接起動専用で、PCブラウザではurlパラメータの
+    // ないシェアページにフォールバックし送信できないことがあるため、url/textを明示的に渡す
+    // 「LINEでシェア」ウィジェット(social-plugins.line.me)をPC/モバイル問わず使用する。
+    const shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
   }
 
   async function shareInviteGeneric() {
@@ -266,6 +284,15 @@ function TeamPageInner() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section>
+        <button
+          onClick={leaveTeam}
+          className="text-sm text-red-600 underline hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+        >
+          このチームを抜ける
+        </button>
       </section>
 
       <section>

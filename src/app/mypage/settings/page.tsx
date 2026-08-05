@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
 
@@ -17,12 +19,15 @@ interface Settings {
 }
 
 export default function MyPageSettings() {
+  const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [lineLinked, setLineLinked] = useState(false);
   const [linkCode, setLinkCode] = useState<string | null>(null);
   const [addFriendUrl, setAddFriendUrl] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/mypage/settings")
@@ -58,6 +63,27 @@ export default function MyPageSettings() {
       body: JSON.stringify(patch),
     });
     setSaved(true);
+  }
+
+  async function withdrawAccount() {
+    if (
+      !window.confirm(
+        "本当に退会しますか?退会するとログインできなくなり、チームからも自動的に抜けます。この操作は取り消せません。",
+      )
+    ) {
+      return;
+    }
+    setWithdrawing(true);
+    setWithdrawError(null);
+    const res = await fetch("/api/account/withdraw", { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setWithdrawError(data.error ?? "退会処理に失敗しました。");
+      setWithdrawing(false);
+      return;
+    }
+    await signOut({ redirect: false });
+    router.push("/login");
   }
 
   if (!settings) {
@@ -176,6 +202,21 @@ export default function MyPageSettings() {
             <li>送信後、「LINE連携が完了しました。」と返信が届けば完了です。</li>
           </ol>
         )}
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-lg border border-red-200 p-6 dark:border-red-900">
+        <h2 className="text-lg font-semibold text-red-700 dark:text-red-400">退会</h2>
+        <p className="text-sm text-zinc-500">
+          退会すると、ログインできなくなり、所属しているチームからも自動的に抜けます。食事画像は退会から90日後に自動的に削除されます。この操作は取り消せません。
+        </p>
+        {withdrawError && <p className="text-sm text-red-600 dark:text-red-400">{withdrawError}</p>}
+        <button
+          onClick={withdrawAccount}
+          disabled={withdrawing}
+          className="self-start rounded-full border border-red-300 px-5 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+        >
+          {withdrawing ? "処理中..." : "退会する"}
+        </button>
       </section>
     </div>
   );
