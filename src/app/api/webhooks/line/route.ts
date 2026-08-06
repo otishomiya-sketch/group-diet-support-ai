@@ -1,10 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { verifyLineSignature, replyTextMessage, fetchLineImageContent } from "@/lib/line/client";
-import { findUserIdByLineUserId, setLineUserId } from "@/lib/sensitive/user-profile";
-import { recordMealCheckIn, recordWeightCheckIn } from "@/lib/checkin/record-checkin";
+import { verifyLineSignature, replyTextMessage, pushTextMessage, fetchLineImageContent } from "@/lib/line/client";
+import { findUserIdByLineUserId, setLineUserId, getLineUserIdForPush } from "@/lib/sensitive/user-profile";
+import {
+  recordWeightCheckIn,
+  createMealCheckIn,
+  estimateAndUpdateMealCheckIn,
+} from "@/lib/checkin/record-checkin";
 import { uploadMealImage } from "@/lib/storage/meal-images";
 
 // 3.6節:LINE Messaging APIのWebhookで画像・体重報告を受信 → アプリ側DBへ統合。
@@ -176,26 +180,38 @@ async function routeLineMessage(event: LineEvent, lineUserId: string): Promise<v
 
     const imageBuffer = await fetchLineImageContent(message.id);
     const imageUrl = await uploadMealImage(userId, imageBuffer, "image/jpeg");
-    const checkIn = await recordMealCheckIn({
-      userId,
-      imageUrl,
-      imageBuffer,
-      contentType: "image/jpeg",
-      source: "line",
+    const checkIn = await createMealCheckIn({ userId, imageUrl, source: "line" });
+
+    if (replyToken) {
+      await replyTextMessage(replyToken, "食事の写真を受け取りました。AIでカロリーを解析しています...");
+    }
+
+    // カロリー推定(AI画像解析、数秒〜十数秒)は応答を返した後にバックグラウンドで行う。
+    // 解析完了を待ってから返信すると、LINE側のタイムアウトで再送が発生し、体感的な
+    // 遅延や(冪等化前は)重複処理の原因になっていたため、応答は先に返す。
+    after(async () => {
+      const estimate = await estimateAndUpdateMealCheckIn(
+        checkIn.id,
+        imageBuffer,
+        "image/jpeg",
+      ).catch(() => null);
+
+      const pushLineUserId = await getLineUserIdForPush(userId).catch(() => null);
+      if (!pushLineUserId) return;
+
+      if (estimate?.estimatedCalories != null) {
+        await pushTextMessage(
+          pushLineUserId,
+          `解析が完了しました。${estimate.foodDescription ?? ""} / 推定 ${estimate.estimatedCalories}kcal(AIによる概算です)`,
+        ).catch(() => {});
+      } else {
+        await pushTextMessage(
+          pushLineUserId,
+          "食事を記録しました。(カロリーの推定はできませんでした)",
+        ).catch(() => {});
+      }
     });
 
-    if (!replyToken) return;
-    if (checkIn.estimatedCalories != null) {
-      await replyTextMessage(
-        replyToken,
-        `食事を記録しました。${checkIn.foodDescription ?? ""} / 推定 ${checkIn.estimatedCalories}kcal(AIによる概算です)`,
-      );
-    } else {
-      await replyTextMessage(
-        replyToken,
-        "食事を記録しました。(カロリーの推定はできませんでした)",
-      );
-    }
     return;
   }
 

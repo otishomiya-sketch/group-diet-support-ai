@@ -34,6 +34,54 @@ export async function recordMealCheckIn(input: RecordMealCheckInInput) {
   });
 }
 
+export interface CreateMealCheckInInput {
+  userId: string;
+  imageUrl: string;
+  source: CheckInSource;
+}
+
+/**
+ * AI画像解析(数秒〜十数秒かかる)を待たずに、まずチェックイン自体を即座に記録する。
+ * LINE Webhookのように応答速度が重要な呼び出し元向け(estimateAndUpdateMealCheckInと
+ * 組み合わせ、解析完了後に別途更新する)。
+ */
+export async function createMealCheckIn(input: CreateMealCheckInInput) {
+  return prisma.checkIn.create({
+    data: {
+      userId: input.userId,
+      type: "meal",
+      imageUrl: input.imageUrl,
+      source: input.source,
+    },
+  });
+}
+
+export interface MealEstimateResult {
+  estimatedCalories: number | null;
+  foodDescription: string | null;
+}
+
+/** createMealCheckInで作成済みのチェックインに、AI解析結果を後から反映する。 */
+export async function estimateAndUpdateMealCheckIn(
+  checkInId: string,
+  imageBuffer: Buffer,
+  contentType: string,
+): Promise<MealEstimateResult> {
+  const estimate = await estimateMealCalories(imageBuffer, contentType);
+
+  const result: MealEstimateResult = {
+    estimatedCalories: estimate?.estimatedCalories ?? null,
+    foodDescription: estimate?.foodDescription ?? null,
+  };
+
+  await prisma.checkIn.update({
+    where: { id: checkInId },
+    data: result,
+  });
+
+  return result;
+}
+
 export interface RecordWeightCheckInInput {
   userId: string;
   weightValueKg: number;
