@@ -13,9 +13,6 @@ export function LineLinkPrompt() {
   const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
-    fetch("/api/mypage/settings")
-      .then((res) => res.json())
-      .then((data) => setLineLinked(Boolean(data.lineLinked)));
     fetch("/api/line/link-code")
       .then((res) => res.json())
       .then((data) => {
@@ -23,6 +20,37 @@ export function LineLinkPrompt() {
         setAddFriendUrl(data.addFriendUrl);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    function checkLinked() {
+      fetch("/api/mypage/settings")
+        .then((res) => res.json())
+        .then((data) => {
+          if (cancelled) return;
+          const linked = Boolean(data.lineLinked);
+          setLineLinked(linked);
+          if (linked) {
+            clearInterval(interval);
+          }
+        })
+        .catch(() => {});
+    }
+
+    checkLinked();
+
+    // LINE連携はLINEアプリ側での操作で完了するため、この画面を開いたままでも
+    // 連携完了を検知して自動的に消えるよう、連携が確認できるまで定期的に確認する。
+    const interval = setInterval(checkLinked, 4000);
+    window.addEventListener("focus", checkLinked);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("focus", checkLinked);
+    };
   }, []);
 
   function copyLinkCode() {

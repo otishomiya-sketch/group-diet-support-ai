@@ -2,14 +2,19 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
+import { MemberActivityRow } from "@/components/team/MemberActivityRow";
 
 interface TeamMember {
   userId: string;
   displayName: string;
   achievedToday: boolean;
+  achievementRate: number;
 }
+
+const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
 interface TeamMessage {
   messageType: string;
@@ -40,6 +45,7 @@ function buildInviteMessage(inviteCode: string, inviteUrl: string): string {
 
 function TeamPageInner() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [team, setTeam] = useState<TeamData | null | undefined>(undefined);
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(() => searchParams.get("joinError"));
@@ -209,6 +215,43 @@ function TeamPageInner() {
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">チーム</h1>
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
+      <section className="rounded-lg border border-amber-300 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
+        <h2 className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          🏆 達成率ランキング
+        </h2>
+        <p className="mb-4 text-xs text-zinc-500">
+          目標体重に対する減少の進み具合をチームで競います。開始時の体重と目標体重から算出した達成率です。
+        </p>
+        <ol className="flex flex-col gap-2">
+          {team.members.map((m, i) => (
+            <li
+              key={m.userId}
+              className={
+                m.userId === session?.user?.id
+                  ? "flex items-center gap-3 rounded-md border-2 border-amber-400 bg-white px-3 py-2 dark:bg-zinc-900"
+                  : "flex items-center gap-3 rounded-md border border-transparent px-3 py-2"
+              }
+            >
+              <span className="w-7 flex-shrink-0 text-center text-lg">
+                {RANK_MEDALS[i] ?? `${i + 1}位`}
+              </span>
+              <span className="w-20 flex-shrink-0 truncate text-sm text-zinc-800 dark:text-zinc-200">
+                {m.displayName}
+              </span>
+              <span className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <span
+                  className="block h-full rounded-full bg-amber-500"
+                  style={{ width: `${m.achievementRate}%` }}
+                />
+              </span>
+              <span className="w-12 flex-shrink-0 text-right text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                {m.achievementRate}%
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {team.formationType === "friend" && team.inviteCode && (
         <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
           <h2 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -264,24 +307,13 @@ function TeamPageInner() {
       )}
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">メンバー</h2>
+        <h2 className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">メンバー</h2>
+        <p className="mb-3 text-xs text-zinc-500">
+          「詳細を見る」でメンバーの体重推移・食事の記録(写真含む)を確認できます。
+        </p>
         <ul className="flex flex-col gap-2">
           {team.members.map((m) => (
-            <li
-              key={m.userId}
-              className="flex items-center justify-between rounded-md border border-zinc-200 px-4 py-2 dark:border-zinc-800"
-            >
-              <span>{m.displayName}</span>
-              <span
-                className={
-                  m.achievedToday
-                    ? "text-sm text-green-600 dark:text-green-400"
-                    : "text-sm text-zinc-400"
-                }
-              >
-                {m.achievedToday ? "本日達成" : "未達成"}
-              </span>
-            </li>
+            <MemberActivityRow key={m.userId} member={m} />
           ))}
         </ul>
       </section>

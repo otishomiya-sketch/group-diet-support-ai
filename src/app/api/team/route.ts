@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSessionUserId, isErrorResponse } from "@/lib/auth-helpers";
 import { getCurrentTeamMembership, getCurrentTeamMemberUserIds } from "@/lib/group/team-membership";
+import { calculateTeamAchievementRates } from "@/lib/group/achievement";
 
-// 5章アクセス制御:チームメンバーには「行動達成の有無」「体重減少共有(共有された場合)」のみを返す。
-// BMI・個人の食事画像はAPIレスポンスレベルで一切含めない(フロントエンド非表示だけに頼らない)。
+// 運営判断により、チーム内では行動達成の有無に加え、体重・食事の詳細(別エンドポイント)や
+// 目標達成率ランキングもメンバー間で共有する(旧方針から転換、weightShareOptOutは適用しない)。
 export async function GET() {
   const session = await requireSessionUserId();
   if (isErrorResponse(session)) return session;
@@ -20,7 +21,7 @@ export async function GET() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [team, members, todayCheckIns, recentMessages] = await Promise.all([
+  const [team, members, todayCheckIns, recentMessages, achievementRates] = await Promise.all([
     prisma.team.findUniqueOrThrow({
       where: { id: membership.teamId },
       select: { formationType: true, inviteCode: true, capacity: true },
@@ -39,9 +40,19 @@ export async function GET() {
       take: 20,
       select: { messageType: true, filteredOutput: true, sentAt: true },
     }),
+    calculateTeamAchievementRates(memberUserIds),
   ]);
 
   const achievedToday = new Set(todayCheckIns.map((c) => c.userId));
+
+  const membersWithRate = members
+    .map((m) => ({
+      userId: m.id,
+      displayName: m.displayName,
+      achievedToday: achievedToday.has(m.id),
+      achievementRate: achievementRates.get(m.id) ?? 0,
+    }))
+    .sort((a, b) => b.achievementRate - a.achievementRate);
 
   return NextResponse.json({
     team: {
@@ -49,11 +60,7 @@ export async function GET() {
       formationType: team.formationType,
       inviteCode: team.formationType === "friend" ? team.inviteCode : null,
       capacity: team.capacity,
-      members: members.map((m) => ({
-        userId: m.id,
-        displayName: m.displayName,
-        achievedToday: achievedToday.has(m.id),
-      })),
+      members: membersWithRate,
       messages: recentMessages,
     },
   });

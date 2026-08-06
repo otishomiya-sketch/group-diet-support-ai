@@ -58,3 +58,29 @@ export async function getCalorieTrend(userId: string, days: number): Promise<Cal
     .map(([date, calories]) => ({ date, calories }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+export interface MealHistoryItem {
+  id: string;
+  imageUrl: string | null;
+  foodDescription: string | null;
+  estimatedCalories: number | null;
+  createdAt: string;
+}
+
+/** チーム内でのメンバー活動閲覧向け:食事チェックインの一覧(新しい順)。 */
+export async function getMealHistory(userId: string, days: number): Promise<MealHistoryItem[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await prisma.checkIn.findMany({
+    where: { userId, type: "meal", createdAt: { gte: since } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, imageUrl: true, foodDescription: true, estimatedCalories: true, createdAt: true },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    imageUrl: row.imageUrl,
+    foodDescription: row.foodDescription,
+    estimatedCalories: row.estimatedCalories,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
