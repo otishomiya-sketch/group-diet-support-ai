@@ -5,23 +5,25 @@ import { getLineUserIdForPush } from "@/lib/sensitive/user-profile";
 // LINE連携済みユーザーに対して能動的に体重・食事の報告を促すバッチ群。
 // 朝(体重)・夜(食事+体重の再促し)の3本立てで、①LINE Botが受信メッセージへの
 // 応答しかしなかった、②サービス活用の導線が弱いというフィードバックを受けて追加。
+//
+// 「今日」の判定はJSTの暦日で行う。UTCの日付やUTC基準のミリ秒差(24h)で判定すると、
+// 例えばJST22時台の夜間チェックインを翌朝7時のリマインダー(UTC上は同日)が
+// 「今日既に報告済み」と誤認し、朝のリマインダーが送られなくなる不具合があったため。
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-function toDateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+function jstDayNumber(d: Date): number {
+  return Math.floor((d.getTime() + JST_OFFSET_MS) / DAY_MS);
 }
 
 function isToday(d: Date | null | undefined): boolean {
-  return !!d && toDateKey(d) === toDateKey(new Date());
+  return !!d && jstDayNumber(d) === jstDayNumber(new Date());
 }
 
-function daysSince(date: Date): number {
-  return Math.floor((Date.now() - date.getTime()) / (24 * 60 * 60 * 1000));
-}
-
-/** weightReportFrequency(毎日/2〜3日に1回/週1回)を踏まえ、今日が報告日かどうか。 */
+/** weightReportFrequency(毎日/2〜3日に1回/週1回)を踏まえ、今日(JST)が報告日かどうか。 */
 function isReportDueToday(frequency: string, lastWeightCheckInAt: Date | null): boolean {
   if (!lastWeightCheckInAt) return true;
-  const days = daysSince(lastWeightCheckInAt);
+  const days = jstDayNumber(new Date()) - jstDayNumber(lastWeightCheckInAt);
   if (frequency === "weekly") return days >= 7;
   if (frequency === "every_2_3_days") return days >= 2;
   return days >= 1;
