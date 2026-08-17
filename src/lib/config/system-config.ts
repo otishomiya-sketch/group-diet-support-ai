@@ -5,9 +5,6 @@ import { prisma } from "@/lib/prisma";
 // 運用担当がDBの値を更新すれば、再デプロイなしで閾値を調整できる。
 
 export const DEFAULT_CONFIG = {
-  // 1.3節:BMIマッチングの許容差(v2で追加)。後続合流者の平均BMIとの乖離がこれを超えたら新規チームに切り出す
-  "bmiMatching.toleranceRange": 3,
-
   // 3.4節(v3):体重報告「回数」ベースの停滞閾値。頻度ごとに調整可能な設定値として実装
   "stagnation.thresholdsByFrequency": {
     daily: { stage1Count: 3, stage2Count: 5 },

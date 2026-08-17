@@ -195,10 +195,6 @@ function TeamPageInner() {
             </button>
           </form>
         </section>
-
-        <p className="text-sm text-zinc-500">
-          自分でチームを作らない場合は、BMIマッチングバッチによって自動的にソロ参加者同士のチームに割り当てられます。
-        </p>
       </div>
     );
   }

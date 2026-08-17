@@ -70,9 +70,6 @@ model User {
 
   role String @default("member") // "member" | "operator" | "agency"(5章アクセス制御用)
 
-  // 1.3節:チーム参加希望。"solo" のみBMIマッチングバッチの対象(friendは招待制、本書スコープ外の運用)
-  teamJoinPreference String @default("solo")
-
   // 3.5節:代理店ダッシュボード用。role="agency"のユーザーのみが持つ自身の紹介コード。
   // 一般会員のagencyReferralCode(紹介元コード)とは別物。
   ownAgencyCode String? @unique
