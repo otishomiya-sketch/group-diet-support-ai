@@ -77,10 +77,7 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
 
   return (
     <li className="rounded-md border border-zinc-200 dark:border-zinc-800">
-      <button
-        onClick={toggle}
-        className="flex w-full items-center justify-between px-4 py-2 text-left"
-      >
+      <div className="flex w-full items-center justify-between px-4 py-2">
         <span className="text-zinc-900 dark:text-zinc-50">{member.displayName}</span>
         <span className="flex items-center gap-3">
           <span className="text-xs tabular-nums text-zinc-500">
@@ -95,9 +92,28 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
           >
             {member.achievedToday ? "本日達成" : "未達成"}
           </span>
-          <span className="text-xs text-zinc-400">{expanded ? "閉じる ▲" : "詳細を見る ▼"}</span>
+          {!isSelf && (
+            <button
+              onClick={challenge}
+              disabled={challenging}
+              className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white hover:bg-orange-600 disabled:opacity-50"
+            >
+              ⚔️ 対戦を申し込む
+            </button>
+          )}
+          <button
+            onClick={toggle}
+            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+          >
+            {expanded ? "閉じる ▲" : "詳細を見る ▼"}
+          </button>
         </span>
-      </button>
+      </div>
+      {challengeStatus && (
+        <p className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800">
+          {challengeStatus}
+        </p>
+      )}
 
       {expanded && (
         <div className="border-t border-zinc-200 px-4 py-4 dark:border-zinc-800">
@@ -146,21 +162,6 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
                     </li>
                   ))}
                 </ul>
-              )}
-
-              {!isSelf && (
-                <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                  <button
-                    onClick={challenge}
-                    disabled={challenging}
-                    className="rounded-full bg-orange-500 px-4 py-2 text-sm text-white hover:bg-orange-600 disabled:opacity-50"
-                  >
-                    ⚔️ 7日間の減量対決を申し込む
-                  </button>
-                  {challengeStatus && (
-                    <p className="mt-2 text-xs text-zinc-500">{challengeStatus}</p>
-                  )}
-                </div>
               )}
             </>
           )}
