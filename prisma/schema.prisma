@@ -84,11 +84,13 @@ model User {
   updatedAt   DateTime  @updatedAt
   withdrawnAt DateTime?
 
-  checkIns        CheckIn[]
-  teamMemberships TeamMembership[]
-  coachMessages   CoachMessage[]
-  safetyFlags     SafetyFlag[]
-  stagnationState StagnationState?
+  checkIns          CheckIn[]
+  teamMemberships   TeamMembership[]
+  coachMessages     CoachMessage[]
+  safetyFlags       SafetyFlag[]
+  stagnationState   StagnationState?
+  duelsAsChallenger Duel[]           @relation("DuelChallenger")
+  duelsAsOpponent   Duel[]           @relation("DuelOpponent")
 
   @@index([bmi])
   @@index([agencyReferralCode])
@@ -136,6 +138,7 @@ model Team {
 
   memberships   TeamMembership[]
   coachMessages CoachMessage[]
+  duels         Duel[]
 
   @@index([status])
 }
@@ -250,5 +253,40 @@ model SystemConfig {
 model ProcessedLineEvent {
   id          String   @id
   processedAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Duel(運営判断:チーム内1対1対戦機能。「ゲーム性を持たせる」施策の一環)
+// 承諾した時点(pending→active)から7日間の体重減少率(%)を競う。
+// 開始時体重は承諾時点のcurrentWeightをそのまま記録し、終了時はcurrentWeightで判定する。
+// ---------------------------------------------------------------------------
+model Duel {
+  id               String    @id @default(cuid())
+  teamId           String
+  challengerUserId String
+  opponentUserId   String
+  status           String // "pending" | "active" | "declined" | "completed" | "cancelled"
+
+  startedAt DateTime?
+  endsAt    DateTime?
+
+  challengerStartWeightEncrypted String?
+  opponentStartWeightEncrypted   String?
+
+  winnerUserId              String?
+  challengerEndWeightEncrypted String?
+  opponentEndWeightEncrypted   String?
+
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+  completedAt DateTime?
+
+  team       Team @relation(fields: [teamId], references: [id])
+  challenger User @relation("DuelChallenger", fields: [challengerUserId], references: [id])
+  opponent   User @relation("DuelOpponent", fields: [opponentUserId], references: [id])
+
+  @@index([teamId, status])
+  @@index([challengerUserId, status])
+  @@index([opponentUserId, status])
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
 import { WeightTrendChart } from "@/components/charts/chart-kit";
 
@@ -32,10 +33,28 @@ interface TeamMember {
 // チーム内での活動公開方針(運営判断):体重推移・食事内容(写真含む)は
 // weightShareOptOut設定に関わらずチームメンバー全員に表示する。
 export function MemberActivityRow({ member }: { member: TeamMember }) {
+  const { data: session } = useSession();
   const [expanded, setExpanded] = useState(false);
   const [data, setData] = useState<ActivityData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [challenging, setChallenging] = useState(false);
+  const [challengeStatus, setChallengeStatus] = useState<string | null>(null);
+
+  const isSelf = session?.user?.id === member.userId;
+
+  async function challenge() {
+    setChallenging(true);
+    setChallengeStatus(null);
+    const res = await fetch("/api/duel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ opponentUserId: member.userId }),
+    });
+    const json = await res.json();
+    setChallengeStatus(res.ok ? "対戦を申し込みました!相手の承諾を待っています。" : (json.error ?? "申し込みに失敗しました。"));
+    setChallenging(false);
+  }
 
   async function toggle() {
     if (!expanded && !data && !loading) {
@@ -127,6 +146,21 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {!isSelf && (
+                <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                  <button
+                    onClick={challenge}
+                    disabled={challenging}
+                    className="rounded-full bg-orange-500 px-4 py-2 text-sm text-white hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    ⚔️ 7日間の減量対決を申し込む
+                  </button>
+                  {challengeStatus && (
+                    <p className="mt-2 text-xs text-zinc-500">{challengeStatus}</p>
+                  )}
+                </div>
               )}
             </>
           )}
