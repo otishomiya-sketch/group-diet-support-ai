@@ -133,9 +133,12 @@ model Team {
   // formationType="friend"のチームのみ発行される招待コード(3.4節・4.1節の離脱導線と対になる参加導線)
   inviteCode String? @unique
 
-  memberships   TeamMembership[]
-  coachMessages CoachMessage[]
-  duels         Duel[]
+  memberships           TeamMembership[]
+  coachMessages         CoachMessage[]
+  duels                 Duel[]
+  teamDuelsAsChallenger TeamDuel[]       @relation("TeamDuelChallenger")
+  teamDuelsAsOpponent   TeamDuel[]       @relation("TeamDuelOpponent")
+  goals                 TeamGoal[]
 
   @@index([status])
 }
@@ -290,5 +293,76 @@ model Duel {
   @@index([teamId, status])
   @@index([challengerUserId, status])
   @@index([opponentUserId, status])
+}
+
+// ---------------------------------------------------------------------------
+// TeamDuel(運営判断:チームvsチームの対戦。個人戦Duelのチーム版)
+// 承諾した時点のチームメンバー全員の体重を記録し、durationDays日後に両チームの
+// 平均体重減少率(%)で勝敗を決める。stakeDescriptionは個人戦と同様、実際の金銭のやり取りはない。
+// ---------------------------------------------------------------------------
+model TeamDuel {
+  id               String @id @default(cuid())
+  challengerTeamId String
+  opponentTeamId   String
+  status           String // "pending" | "active" | "declined" | "completed" | "cancelled"
+
+  durationDays     Int
+  stakeDescription String?
+
+  startedAt DateTime?
+  endsAt    DateTime?
+
+  winnerTeamId          String?
+  challengerRatePercent Float?
+  opponentRatePercent   Float?
+
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+  completedAt DateTime?
+
+  challengerTeam Team                  @relation("TeamDuelChallenger", fields: [challengerTeamId], references: [id])
+  opponentTeam   Team                  @relation("TeamDuelOpponent", fields: [opponentTeamId], references: [id])
+  participants   TeamDuelParticipant[]
+
+  @@index([challengerTeamId, status])
+  @@index([opponentTeamId, status])
+}
+
+// 対戦承諾時点の各チームメンバーの開始体重を記録するスナップショット。
+model TeamDuelParticipant {
+  id                   String @id @default(cuid())
+  teamDuelId           String
+  side                 String // "challenger" | "opponent"
+  userId               String
+  startWeightEncrypted String
+  endWeightEncrypted   String?
+
+  teamDuel TeamDuel @relation(fields: [teamDuelId], references: [id])
+
+  @@index([teamDuelId])
+}
+
+// ---------------------------------------------------------------------------
+// TeamGoal(運営判断:チーム内の共有目標・賭け)
+// メンバーの誰かが「期限までに平均達成率を◯%にする」という目標を設定し、
+// 期限到達時にチーム全員の達成率(calculateAchievementRate)の平均で成否を判定する。
+// ---------------------------------------------------------------------------
+model TeamGoal {
+  id                    String  @id @default(cuid())
+  teamId                String
+  targetAchievementRate Int
+  durationDays          Int
+  stakeDescription      String?
+  status                String // "active" | "completed"
+  achieved              Boolean?
+  finalAchievementRate  Float?
+
+  createdAt   DateTime  @default(now())
+  endsAt      DateTime
+  completedAt DateTime?
+
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@index([teamId, status])
 }
 

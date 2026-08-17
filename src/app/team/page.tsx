@@ -7,6 +7,8 @@ import { useSession } from "next-auth/react";
 import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
 import { MemberActivityRow } from "@/components/team/MemberActivityRow";
 import { DuelSection } from "@/components/team/DuelSection";
+import { TeamDuelSection } from "@/components/team/TeamDuelSection";
+import { TeamGoalSection } from "@/components/team/TeamGoalSection";
 
 interface TeamMember {
   userId: string;
@@ -243,6 +245,10 @@ function TeamPageInner() {
       </section>
 
       <DuelSection />
+
+      <TeamGoalSection />
+
+      <TeamDuelSection />
 
       {team.formationType === "friend" && team.inviteCode && (
         <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
