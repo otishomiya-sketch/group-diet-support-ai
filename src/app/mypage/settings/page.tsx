@@ -13,8 +13,6 @@ interface Settings {
   bmiDisplayOptIn: boolean;
   weightShareOptOut: boolean;
   weightReportFrequency: string;
-  notifyScheduled: boolean;
-  notifyTeamShare: boolean;
   notifyIndividualSupport: boolean;
 }
 
@@ -134,22 +132,6 @@ export default function MyPageSettings() {
       <section className="flex flex-col gap-4 rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">通知</h2>
 
-        <label className="flex items-center justify-between gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-          定時配信
-          <input
-            type="checkbox"
-            checked={settings.notifyScheduled}
-            onChange={(e) => save({ notifyScheduled: e.target.checked })}
-          />
-        </label>
-        <label className="flex items-center justify-between gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-          チーム共有通知
-          <input
-            type="checkbox"
-            checked={settings.notifyTeamShare}
-            onChange={(e) => save({ notifyTeamShare: e.target.checked })}
-          />
-        </label>
         <label className="flex items-center justify-between gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           個別行動支援通知
           <input

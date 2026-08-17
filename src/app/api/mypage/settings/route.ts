@@ -9,7 +9,7 @@ const WEIGHT_REPORT_FREQUENCIES = new Set(["daily", "every_2_3_days", "weekly"])
 // - bmiDisplayOptIn:デフォルトOFF(BMI非表示)
 // - weightShareOptOut:「自分の体重減少をチームに共有しない」トグル
 // - weightReportFrequency:v3で選択制に変更(9.10節、日次を強く誘導しない)
-// - notifyScheduled / notifyTeamShare / notifyIndividualSupport:通知の個別ON/OFF
+// - notifyIndividualSupport:個別行動支援通知のON/OFF(定時配信・チーム共有機能は廃止済み)
 export async function GET() {
   const session = await requireSessionUserId();
   if (isErrorResponse(session)) return session;
@@ -20,8 +20,6 @@ export async function GET() {
       bmiDisplayOptIn: true,
       weightShareOptOut: true,
       weightReportFrequency: true,
-      notifyScheduled: true,
-      notifyTeamShare: true,
       notifyIndividualSupport: true,
       lineUserIdHash: true,
     },
@@ -41,8 +39,6 @@ export async function PATCH(request: Request) {
 
   if (typeof body?.bmiDisplayOptIn === "boolean") data.bmiDisplayOptIn = body.bmiDisplayOptIn;
   if (typeof body?.weightShareOptOut === "boolean") data.weightShareOptOut = body.weightShareOptOut;
-  if (typeof body?.notifyScheduled === "boolean") data.notifyScheduled = body.notifyScheduled;
-  if (typeof body?.notifyTeamShare === "boolean") data.notifyTeamShare = body.notifyTeamShare;
   if (typeof body?.notifyIndividualSupport === "boolean") {
     data.notifyIndividualSupport = body.notifyIndividualSupport;
   }

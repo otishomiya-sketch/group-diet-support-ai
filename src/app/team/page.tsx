@@ -17,18 +17,11 @@ interface TeamMember {
 
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
-interface TeamMessage {
-  messageType: string;
-  filteredOutput: string;
-  sentAt: string;
-}
-
 interface TeamData {
   formationType: string;
   inviteCode: string | null;
   capacity: number;
   members: TeamMember[];
-  messages: TeamMessage[];
 }
 
 const inputClass =
@@ -261,7 +254,7 @@ function TeamPageInner() {
             友達を招待する
           </h2>
           <p className="mb-3 text-sm text-zinc-500">
-            これは、あなたの今のチーム(現在{team.members.length}/{team.capacity}名)へ友達を招待するためのものです。招待された友達がこのアプリに登録(またはログイン)すると、自動的にあなたと同じチームのメンバーになり、お互いの日々の達成状況やAIコーチからの応援メッセージを共有できるようになります。
+            これは、あなたの今のチーム(現在{team.members.length}/{team.capacity}名)へ友達を招待するためのものです。招待された友達がこのアプリに登録(またはログイン)すると、自動的にあなたと同じチームのメンバーになり、お互いの日々の達成状況や体重・食事の記録を共有し、達成率ランキングや対戦で競い合えるようになります。
           </p>
           <p className="mb-1 text-xs font-medium text-zinc-500">
             ① 何に招待しているか・招待リンク・招待コードをまとめたメッセージを、そのままLINEや他のアプリで送れます:
@@ -328,21 +321,6 @@ function TeamPageInner() {
         >
           このチームを抜ける
         </button>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">コーチからのメッセージ</h2>
-        {team.messages.length === 0 && (
-          <p className="text-sm text-zinc-500">まだメッセージはありません。</p>
-        )}
-        <ul className="flex flex-col gap-3">
-          {team.messages.map((m, i) => (
-            <li key={i} className="rounded-md bg-zinc-100 px-4 py-3 text-sm dark:bg-zinc-900">
-              <p className="whitespace-pre-wrap text-zinc-800 dark:text-zinc-200">{m.filteredOutput}</p>
-              <p className="mt-1 text-xs text-zinc-400">{new Date(m.sentAt).toLocaleString("ja-JP")}</p>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   );

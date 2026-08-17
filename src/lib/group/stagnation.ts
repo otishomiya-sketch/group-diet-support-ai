@@ -72,7 +72,7 @@ export async function runIndividualSupportBatch(): Promise<{ evaluated: number; 
         where: { userId: user.id },
         data: { stage1FiredAt: new Date() },
       });
-      await pushCoachMessageToUser(user.id, message.filteredOutput, "notifyIndividualSupport");
+      await pushCoachMessageToUser(user.id, message.filteredOutput);
       fired += 1;
     }
 
@@ -93,7 +93,7 @@ export async function runIndividualSupportBatch(): Promise<{ evaluated: number; 
         where: { userId: user.id },
         data: { stage2FiredAt: new Date(), stage2FireCount: { increment: 1 } },
       });
-      await pushCoachMessageToUser(user.id, message.filteredOutput, "notifyIndividualSupport");
+      await pushCoachMessageToUser(user.id, message.filteredOutput);
       fired += 1;
     }
   }

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { decryptNumber, encryptNumber } from "@/lib/crypto/field-encryption";
 import { updateCurrentWeight } from "@/lib/sensitive/user-profile";
-import { triggerWeightShareIfApplicable } from "@/lib/group/weight-share";
 import { estimateMealCalories } from "@/lib/nutrition/estimate-calories";
 
 export type CheckInSource = "line" | "app";
@@ -98,7 +97,6 @@ export interface RecordWeightCheckInResult {
 /**
  * 1.2節:体重チェックイン。weightDeltaは「直近の体重報告(CheckIn)との差分」として
  * サーバー側で算出する(フロントエンド側で計算しないこと、整合性担保のため)。
- * 3.4節:weightDelta<0 の場合はチーム共有トリガーをリアルタイムで評価する。
  */
 export async function recordWeightCheckIn(
   input: RecordWeightCheckInInput,
@@ -126,10 +124,6 @@ export async function recordWeightCheckIn(
   });
 
   const bmi = await updateCurrentWeight(input.userId, input.weightValueKg);
-
-  if (weightDeltaKg !== null && weightDeltaKg < 0) {
-    await triggerWeightShareIfApplicable(input.userId, weightDeltaKg);
-  }
 
   return { checkInId: checkIn.id, weightValueKg: input.weightValueKg, weightDeltaKg, bmi };
 }

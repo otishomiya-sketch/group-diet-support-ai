@@ -21,7 +21,7 @@ export async function GET() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [team, members, todayCheckIns, recentMessages, achievementRates] = await Promise.all([
+  const [team, members, todayCheckIns, achievementRates] = await Promise.all([
     prisma.team.findUniqueOrThrow({
       where: { id: membership.teamId },
       select: { formationType: true, inviteCode: true, capacity: true },
@@ -33,12 +33,6 @@ export async function GET() {
     prisma.checkIn.groupBy({
       by: ["userId"],
       where: { userId: { in: memberUserIds }, createdAt: { gte: startOfToday } },
-    }),
-    prisma.coachMessage.findMany({
-      where: { teamId: membership.teamId },
-      orderBy: { sentAt: "desc" },
-      take: 20,
-      select: { messageType: true, filteredOutput: true, sentAt: true },
     }),
     calculateTeamAchievementRates(memberUserIds),
   ]);
@@ -61,7 +55,6 @@ export async function GET() {
       inviteCode: team.formationType === "friend" ? team.inviteCode : null,
       capacity: team.capacity,
       members: membersWithRate,
-      messages: recentMessages,
     },
   });
 }

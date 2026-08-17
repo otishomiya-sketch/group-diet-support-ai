@@ -2,19 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { getLineUserIdForPush } from "@/lib/sensitive/user-profile";
 import { pushTextMessage } from "@/lib/line/client";
 
-type NotificationField = "notifyScheduled" | "notifyTeamShare" | "notifyIndividualSupport";
-
-/** 3.6節:通知設定(定時配信・チーム共有・個別支援を別々にON/OFF)を尊重してLINE Pushする。 */
-export async function pushCoachMessageToUser(
-  userId: string,
-  text: string,
-  notificationField: NotificationField,
-): Promise<void> {
+/** 個別行動支援通知(notifyIndividualSupport)を尊重してLINE Pushする。 */
+export async function pushCoachMessageToUser(userId: string, text: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { notifyScheduled: true, notifyTeamShare: true, notifyIndividualSupport: true },
+    select: { notifyIndividualSupport: true },
   });
-  if (!user || !user[notificationField]) return;
+  if (!user || !user.notifyIndividualSupport) return;
 
   const lineUserId = await getLineUserIdForPush(userId);
   if (!lineUserId) return;
