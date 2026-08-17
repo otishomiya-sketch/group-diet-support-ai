@@ -38,6 +38,9 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
   const [data, setData] = useState<ActivityData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [challengeFormOpen, setChallengeFormOpen] = useState(false);
+  const [durationDays, setDurationDays] = useState(7);
+  const [stakeDescription, setStakeDescription] = useState("");
   const [challenging, setChallenging] = useState(false);
   const [challengeStatus, setChallengeStatus] = useState<string | null>(null);
 
@@ -49,11 +52,19 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
     const res = await fetch("/api/duel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ opponentUserId: member.userId }),
+      body: JSON.stringify({
+        opponentUserId: member.userId,
+        durationDays,
+        stakeDescription: stakeDescription.trim() || null,
+      }),
     });
     const json = await res.json();
     setChallengeStatus(res.ok ? "対戦を申し込みました!相手の承諾を待っています。" : (json.error ?? "申し込みに失敗しました。"));
     setChallenging(false);
+    if (res.ok) {
+      setChallengeFormOpen(false);
+      setStakeDescription("");
+    }
   }
 
   async function toggle() {
@@ -94,9 +105,8 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
           </span>
           {!isSelf && (
             <button
-              onClick={challenge}
-              disabled={challenging}
-              className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white hover:bg-orange-600 disabled:opacity-50"
+              onClick={() => setChallengeFormOpen((v) => !v)}
+              className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white hover:bg-orange-600"
             >
               ⚔️ 対戦を申し込む
             </button>
@@ -109,6 +119,55 @@ export function MemberActivityRow({ member }: { member: TeamMember }) {
           </button>
         </span>
       </div>
+
+      {challengeFormOpen && !isSelf && (
+        <div className="flex flex-col gap-3 border-t border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div>
+            <p className="mb-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">対戦期間</p>
+            <div className="flex gap-2">
+              {[3, 7, 14].map((days) => (
+                <button
+                  key={days}
+                  onClick={() => setDurationDays(days)}
+                  className={
+                    durationDays === days
+                      ? "rounded-full bg-zinc-900 px-3 py-1 text-xs text-white dark:bg-zinc-50 dark:text-black"
+                      : "rounded-full border border-zinc-300 px-3 py-1 text-xs text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  }
+                >
+                  {days}日間
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            賭けの内容(任意・実際の金銭のやり取りはありません)
+            <input
+              value={stakeDescription}
+              onChange={(e) => setStakeDescription(e.target.value)}
+              maxLength={200}
+              placeholder="例:負けたらランチをおごる"
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-normal dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={challenge}
+              disabled={challenging}
+              className="rounded-full bg-orange-500 px-4 py-1.5 text-xs text-white hover:bg-orange-600 disabled:opacity-50"
+            >
+              {challenging ? "申し込み中..." : "この内容で申し込む"}
+            </button>
+            <button
+              onClick={() => setChallengeFormOpen(false)}
+              className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
       {challengeStatus && (
         <p className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800">
           {challengeStatus}

@@ -5,12 +5,26 @@ import { pushTextMessage } from "@/lib/line/client";
 import { getLineUserIdForPush } from "@/lib/sensitive/user-profile";
 
 // 運営判断:チーム内1対1対戦機能(「ゲーム性を持たせる」施策)。
-// 承諾した時点から7日間、体重減少率(%)を競う。身長は不変なので減少率はBMI減少率と一致する。
-const DUEL_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+// 承諾した時点からdurationDays日間、体重減少率(%)を競う。身長は不変なので減少率はBMI減少率と一致する。
+// stakeDescriptionは罰ゲーム等の自由記述のみで、実際の金銭のやり取りは一切発生しない。
+const ALLOWED_DURATION_DAYS = [3, 7, 14];
+const MAX_STAKE_DESCRIPTION_LENGTH = 200;
 
-export async function createDuelChallenge(challengerUserId: string, opponentUserId: string) {
+export async function createDuelChallenge(
+  challengerUserId: string,
+  opponentUserId: string,
+  durationDays: number,
+  stakeDescription: string | null,
+) {
   if (challengerUserId === opponentUserId) {
     throw new Error("自分自身には対戦を申し込めません。");
+  }
+  if (!ALLOWED_DURATION_DAYS.includes(durationDays)) {
+    throw new Error("対戦期間は3日・7日・14日のいずれかを選択してください。");
+  }
+  const trimmedStake = stakeDescription?.trim() || null;
+  if (trimmedStake && trimmedStake.length > MAX_STAKE_DESCRIPTION_LENGTH) {
+    throw new Error(`賭けの内容は${MAX_STAKE_DESCRIPTION_LENGTH}文字以内で入力してください。`);
   }
 
   const membership = await getCurrentTeamMembership(challengerUserId);
@@ -37,7 +51,14 @@ export async function createDuelChallenge(challengerUserId: string, opponentUser
   }
 
   const duel = await prisma.duel.create({
-    data: { teamId: membership.teamId, challengerUserId, opponentUserId, status: "pending" },
+    data: {
+      teamId: membership.teamId,
+      challengerUserId,
+      opponentUserId,
+      status: "pending",
+      durationDays,
+      stakeDescription: trimmedStake,
+    },
   });
 
   const [challenger, opponentLineUserId] = await Promise.all([
@@ -45,9 +66,10 @@ export async function createDuelChallenge(challengerUserId: string, opponentUser
     getLineUserIdForPush(opponentUserId),
   ]);
   if (opponentLineUserId) {
+    const stakeText = trimmedStake ? `\n賭けの内容:${trimmedStake}` : "";
     await pushTextMessage(
       opponentLineUserId,
-      `${challenger.displayName}さんから「7日間、体重減少率で勝負しよう」と対戦を申し込まれました!アプリの「チーム」画面から承諾・辞退できます。`,
+      `${challenger.displayName}さんから「${durationDays}日間、体重減少率で勝負しよう」と対戦を申し込まれました!${stakeText}\nアプリの「チーム」画面から承諾・辞退できます。`,
     ).catch(() => {});
   }
 
@@ -87,12 +109,13 @@ export async function respondToDuelChallenge(
   ]);
 
   const now = new Date();
+  const durationMs = duel.durationDays * 24 * 60 * 60 * 1000;
   await prisma.duel.update({
     where: { id: duelId },
     data: {
       status: "active",
       startedAt: now,
-      endsAt: new Date(now.getTime() + DUEL_DURATION_MS),
+      endsAt: new Date(now.getTime() + durationMs),
       respondedAt: now,
       challengerStartWeightEncrypted: challenger.currentWeightEncrypted,
       opponentStartWeightEncrypted: opponent.currentWeightEncrypted,
@@ -103,7 +126,7 @@ export async function respondToDuelChallenge(
   if (challengerLineUserId) {
     await pushTextMessage(
       challengerLineUserId,
-      "対戦を承諾されました!今日から7日間、体重減少率での勝負が始まります。",
+      `対戦を承諾されました!今日から${duel.durationDays}日間、体重減少率での勝負が始まります。`,
     ).catch(() => {});
   }
 }
@@ -158,15 +181,17 @@ async function resolveDuel(duelId: string): Promise<void> {
     },
   });
 
+  const stakeText = duel.stakeDescription ? `\n賭けの内容:${duel.stakeDescription}` : "";
+
   function resultMessage(myRate: number, oppRate: number, oppName: string, iWon: boolean | null): string {
     const myPct = myRate.toFixed(1);
     const oppPct = oppRate.toFixed(1);
     if (iWon === null) {
-      return `対戦終了!あなた${myPct}% vs ${oppName}さん${oppPct}% で引き分けでした。`;
+      return `対戦終了!あなた${myPct}% vs ${oppName}さん${oppPct}% で引き分けでした。${stakeText}`;
     }
     return iWon
-      ? `対戦終了!あなた${myPct}% vs ${oppName}さん${oppPct}% で勝利しました!🎉`
-      : `対戦終了!あなた${myPct}% vs ${oppName}さん${oppPct}% で敗北...次は勝とう!`;
+      ? `対戦終了!あなた${myPct}% vs ${oppName}さん${oppPct}% で勝利しました!🎉${stakeText}`
+      : `対戦終了!あなた${myPct}% vs ${oppName}さん${oppPct}% で敗北...次は勝とう!${stakeText}`;
   }
 
   const [challengerLineUserId, opponentLineUserId] = await Promise.all([
@@ -223,6 +248,8 @@ export interface DuelListItem {
   role: "challenger" | "opponent";
   opponentUserId: string;
   opponentDisplayName: string;
+  durationDays: number;
+  stakeDescription: string | null;
   startedAt: string | null;
   endsAt: string | null;
   isWinner: boolean | null;
@@ -267,6 +294,8 @@ export async function getDuelsForUser(userId: string): Promise<DuelListItem[]> {
       role: isChallenger ? "challenger" : "opponent",
       opponentUserId,
       opponentDisplayName,
+      durationDays: d.durationDays,
+      stakeDescription: d.stakeDescription,
       startedAt: d.startedAt?.toISOString() ?? null,
       endsAt: d.endsAt?.toISOString() ?? null,
       isWinner: d.winnerUserId ? d.winnerUserId === userId : null,

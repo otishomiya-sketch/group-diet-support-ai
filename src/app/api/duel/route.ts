@@ -18,12 +18,14 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const opponentUserId = typeof body?.opponentUserId === "string" ? body.opponentUserId : "";
+  const durationDays = typeof body?.durationDays === "number" ? body.durationDays : 7;
+  const stakeDescription = typeof body?.stakeDescription === "string" ? body.stakeDescription : null;
   if (!opponentUserId) {
     return NextResponse.json({ error: "対戦相手を指定してください。" }, { status: 400 });
   }
 
   try {
-    const duel = await createDuelChallenge(session.userId, opponentUserId);
+    const duel = await createDuelChallenge(session.userId, opponentUserId, durationDays, stakeDescription);
     return NextResponse.json({ duel });
   } catch (error) {
     const message = error instanceof Error ? error.message : "対戦の申し込みに失敗しました。";

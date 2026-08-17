@@ -8,6 +8,8 @@ interface Duel {
   role: "challenger" | "opponent";
   opponentUserId: string;
   opponentDisplayName: string;
+  durationDays: number;
+  stakeDescription: string | null;
   startedAt: string | null;
   endsAt: string | null;
   isWinner: boolean | null;
@@ -66,27 +68,29 @@ export function DuelSection() {
       <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">⚔️ 対戦</h2>
 
       {incomingPending.map((d) => (
-        <div
-          key={d.id}
-          className="mb-3 flex items-center justify-between rounded-md bg-white px-4 py-2 dark:bg-zinc-900"
-        >
-          <span className="text-sm text-zinc-800 dark:text-zinc-200">
-            {d.opponentDisplayName}さんから対戦の申し込み
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => respond(d.id, true)}
-              className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white hover:bg-orange-600"
-            >
-              承諾
-            </button>
-            <button
-              onClick={() => respond(d.id, false)}
-              className="rounded-full border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-            >
-              辞退
-            </button>
+        <div key={d.id} className="mb-3 rounded-md bg-white px-4 py-2 dark:bg-zinc-900">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-zinc-800 dark:text-zinc-200">
+              {d.opponentDisplayName}さんから{d.durationDays}日間の対戦の申し込み
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => respond(d.id, true)}
+                className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white hover:bg-orange-600"
+              >
+                承諾
+              </button>
+              <button
+                onClick={() => respond(d.id, false)}
+                className="rounded-full border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                辞退
+              </button>
+            </div>
           </div>
+          {d.stakeDescription && (
+            <p className="mt-1 text-xs text-zinc-500">賭けの内容:{d.stakeDescription}</p>
+          )}
         </div>
       ))}
 
@@ -95,7 +99,8 @@ export function DuelSection() {
           key={d.id}
           className="mb-3 rounded-md bg-white px-4 py-2 text-sm text-zinc-500 dark:bg-zinc-900"
         >
-          {d.opponentDisplayName}さんへの対戦申し込み、返答待ちです。
+          {d.opponentDisplayName}さんへの{d.durationDays}日間の対戦申し込み、返答待ちです。
+          {d.stakeDescription && <span className="block text-xs">賭けの内容:{d.stakeDescription}</span>}
         </div>
       ))}
 
@@ -110,6 +115,9 @@ export function DuelSection() {
               </span>
               <span className="text-xs text-zinc-500">残り{daysRemaining(d.endsAt)}日</span>
             </div>
+            {d.stakeDescription && (
+              <p className="mb-2 text-xs text-zinc-500">賭けの内容:{d.stakeDescription}</p>
+            )}
             <div className="flex items-center gap-2 text-xs">
               <span className="w-20 flex-shrink-0 tabular-nums text-zinc-600 dark:text-zinc-300">
                 あなた {mine.toFixed(1)}%
@@ -150,6 +158,7 @@ export function DuelSection() {
                 {d.myChangeRatePercent != null && d.opponentChangeRatePercent != null
                   ? ` (${d.myChangeRatePercent.toFixed(1)}% vs ${d.opponentChangeRatePercent.toFixed(1)}%)`
                   : ""}
+                {d.stakeDescription ? `・賭け:${d.stakeDescription}` : ""}
               </li>
             ))}
           </ul>

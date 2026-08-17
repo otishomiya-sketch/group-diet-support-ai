@@ -257,8 +257,10 @@ model ProcessedLineEvent {
 
 // ---------------------------------------------------------------------------
 // Duel(運営判断:チーム内1対1対戦機能。「ゲーム性を持たせる」施策の一環)
-// 承諾した時点(pending→active)から7日間の体重減少率(%)を競う。
+// 承諾した時点(pending→active)からdurationDays日間の体重減少率(%)を競う。
 // 開始時体重は承諾時点のcurrentWeightをそのまま記録し、終了時はcurrentWeightで判定する。
+// stakeDescriptionは申込者が自由記入する罰ゲーム・お祝いの文言(例:「負けたらランチをおごる」)であり、
+// 実際の金銭決済は一切発生しない(決済連携は9.4節の通り未実装・法務未確認のため)。
 // ---------------------------------------------------------------------------
 model Duel {
   id               String    @id @default(cuid())
@@ -266,6 +268,9 @@ model Duel {
   challengerUserId String
   opponentUserId   String
   status           String // "pending" | "active" | "declined" | "completed" | "cancelled"
+
+  durationDays     Int     @default(7) // 申込時に3・7・14日から選択
+  stakeDescription String? // 罰ゲーム等の自由記述(金銭のやり取りは発生しない)
 
   startedAt DateTime?
   endsAt    DateTime?

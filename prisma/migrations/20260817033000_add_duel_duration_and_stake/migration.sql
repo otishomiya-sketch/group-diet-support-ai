@@ -1,0 +1,2 @@
+ALTER TABLE "Duel" ADD COLUMN "durationDays" INTEGER NOT NULL DEFAULT 7;
+ALTER TABLE "Duel" ADD COLUMN "stakeDescription" TEXT;
