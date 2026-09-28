@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
@@ -93,6 +94,21 @@ function RegisterForm() {
         <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
           サロン招待コード「{salonCode}」を検出しました。登録後、自動でこのサロンの会員として登録されます。
           サロンのスタッフは、会員である方の体重推移・食事記録を確認できます。
+        </p>
+      )}
+      {(inviteCode || salonCode) && (
+        <p className="text-sm text-zinc-500">
+          すでにアカウントをお持ちの場合は、新規登録ではなく{" "}
+          <Link
+            href={`/login?${new URLSearchParams({
+              ...(inviteCode ? { teamCode: inviteCode } : {}),
+              ...(salonCode ? { salonCode } : {}),
+            }).toString()}`}
+            className="text-blue-600 underline hover:text-blue-700 dark:text-blue-400"
+          >
+            ログインして参加
+          </Link>
+          してください。
         </p>
       )}
 
