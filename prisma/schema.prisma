@@ -88,6 +88,7 @@ model User {
   stagnationState   StagnationState?
   duelsAsChallenger Duel[]           @relation("DuelChallenger")
   duelsAsOpponent   Duel[]           @relation("DuelOpponent")
+  salonMemberships  SalonMembership[]
 
   @@index([bmi])
   @@index([agencyReferralCode])
@@ -364,5 +365,52 @@ model TeamGoal {
   team Team @relation(fields: [teamId], references: [id])
 
   @@index([teamId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Salon / SalonMembership(運営判断:エステサロン等の店舗がスタッフとして顧客を
+// 管理できるようにする機能。Team/TeamMembershipのピア型構造とは異なり、
+// role="staff"はrole="customer"の記録(体重推移・食事記録・達成率)を閲覧し、
+// LINEメッセージを送信できる。サロンの作成・スタッフ追加は運営(operator)が
+// 代行する(パイロット導入のため自己登録フローは設けない)。顧客はcustomerInviteCode
+// 経由で自己登録する(Teamの招待コード導線と同じ形)。
+// サロン会員であること自体を、スタッフによる記録閲覧への同意とみなす(運営判断)。
+// ---------------------------------------------------------------------------
+model Salon {
+  id                 String   @id @default(cuid())
+  name               String
+  customerInviteCode String   @unique
+  createdAt          DateTime @default(now())
+
+  memberships      SalonMembership[]
+  messageTemplates SalonMessageTemplate[]
+}
+
+model SalonMembership {
+  id       String    @id @default(cuid())
+  salonId  String
+  userId   String
+  role     String // "staff" | "customer"
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime? // 離脱時に記録。null = 現在も所属中
+
+  salon Salon @relation(fields: [salonId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([salonId, role, leftAt])
+  @@index([userId, leftAt])
+}
+
+// スタッフが複数顧客に一斉送信する際の定型文テンプレート。
+model SalonMessageTemplate {
+  id        String   @id @default(cuid())
+  salonId   String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  salon Salon @relation(fields: [salonId], references: [id])
+
+  @@index([salonId])
 }
 

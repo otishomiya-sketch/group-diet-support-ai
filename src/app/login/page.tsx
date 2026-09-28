@@ -11,6 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("code");
+  const salonCode = searchParams.get("salonCode");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +26,20 @@ function LoginForm() {
       setSubmitting(false);
       setError("メールアドレスまたはパスワードが正しくありません。");
       return;
+    }
+
+    if (salonCode) {
+      const salonRes = await fetch("/api/salon/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteCode: salonCode }),
+      });
+      if (!salonRes.ok) {
+        const data = await salonRes.json().catch(() => ({}));
+        setSubmitting(false);
+        setError(data.error ?? "サロンへの参加に失敗しました。");
+        return;
+      }
     }
 
     if (inviteCode) {
@@ -53,6 +68,11 @@ function LoginForm() {
       {inviteCode && (
         <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
           ログイン後、チーム招待コード「{inviteCode}」で自動的に参加します。
+        </p>
+      )}
+      {salonCode && (
+        <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+          ログイン後、サロン招待コード「{salonCode}」で自動的に参加します。
         </p>
       )}
       {error && (

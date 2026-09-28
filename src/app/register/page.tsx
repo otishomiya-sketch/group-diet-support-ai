@@ -28,6 +28,7 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("code");
+  const salonCode = searchParams.get("salonCode");
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -67,7 +68,11 @@ function RegisterForm() {
         return;
       }
       setWarnings(data.warnings ?? []);
-      router.push(inviteCode ? `/login?code=${encodeURIComponent(inviteCode)}` : "/login");
+      const query = new URLSearchParams();
+      if (inviteCode) query.set("code", inviteCode);
+      if (salonCode) query.set("salonCode", salonCode);
+      const qs = query.toString();
+      router.push(qs ? `/login?${qs}` : "/login");
     } catch {
       setError("通信エラーが発生しました。");
     } finally {
@@ -82,6 +87,12 @@ function RegisterForm() {
       {inviteCode && (
         <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
           チーム招待コード「{inviteCode}」を検出しました。登録後、自動でこのチームに参加します。
+        </p>
+      )}
+      {salonCode && (
+        <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+          サロン招待コード「{salonCode}」を検出しました。登録後、自動でこのサロンの会員として登録されます。
+          サロンのスタッフは、会員である方の体重推移・食事記録を確認できます。
         </p>
       )}
 
