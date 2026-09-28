@@ -29,17 +29,13 @@ function LoginForm() {
     }
 
     if (salonCode) {
-      const salonRes = await fetch("/api/salon/join", {
+      // ログイン自体は既に成功しているので、サロンへの参加(既に参加済み等)が失敗しても
+      // ログインを失敗扱いにはしない。
+      await fetch("/api/salon/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ inviteCode: salonCode }),
-      });
-      if (!salonRes.ok) {
-        const data = await salonRes.json().catch(() => ({}));
-        setSubmitting(false);
-        setError(data.error ?? "サロンへの参加に失敗しました。");
-        return;
-      }
+      }).catch(() => {});
     }
 
     if (inviteCode) {
