@@ -27,7 +27,7 @@ const ACTIVITY_LEVEL_OPTIONS = [
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const inviteCode = searchParams.get("code");
+  const inviteCode = searchParams.get("teamCode");
   const salonCode = searchParams.get("salonCode");
   const [form, setForm] = useState({
     displayName: "",
@@ -69,7 +69,7 @@ function RegisterForm() {
       }
       setWarnings(data.warnings ?? []);
       const query = new URLSearchParams();
-      if (inviteCode) query.set("code", inviteCode);
+      if (inviteCode) query.set("teamCode", inviteCode);
       if (salonCode) query.set("salonCode", salonCode);
       const qs = query.toString();
       router.push(qs ? `/login?${qs}` : "/login");

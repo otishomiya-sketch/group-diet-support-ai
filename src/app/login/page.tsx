@@ -10,7 +10,7 @@ const inputClass =
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const inviteCode = searchParams.get("code");
+  const inviteCode = searchParams.get("teamCode");
   const salonCode = searchParams.get("salonCode");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -29,13 +29,13 @@ export default async function TeamJoinPage({
         </p>
         <div className="flex flex-col gap-3">
           <Link
-            href={`/register?code=${encodeURIComponent(code)}`}
+            href={`/register?teamCode=${encodeURIComponent(code)}`}
             className="rounded-full bg-zinc-900 px-6 py-3 text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-black"
           >
             新規登録して参加する
           </Link>
           <Link
-            href={`/login?code=${encodeURIComponent(code)}`}
+            href={`/login?teamCode=${encodeURIComponent(code)}`}
             className="rounded-full border border-zinc-300 px-6 py-3 text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-900"
           >
             すでにアカウントがある(ログイン)
