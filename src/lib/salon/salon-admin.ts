@@ -42,3 +42,50 @@ export async function addSalonStaffByEmail(salonId: string, email: string): Prom
   });
   return { ok: true };
 }
+
+export type RemoveSalonStaffResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function removeSalonStaff(salonId: string, userId: string): Promise<RemoveSalonStaffResult> {
+  const result = await prisma.salonMembership.updateMany({
+    where: { salonId, userId, role: "staff", leftAt: null },
+    data: { leftAt: new Date() },
+  });
+  if (result.count === 0) {
+    return { ok: false, error: "このサロンのスタッフではありません。" };
+  }
+  return { ok: true };
+}
+
+export interface SalonAdminListItem {
+  id: string;
+  name: string;
+  customerInviteCode: string;
+  createdAt: string;
+  staff: { userId: string; displayName: string; email: string }[];
+  customerCount: number;
+}
+
+export async function listSalonsForAdmin(): Promise<SalonAdminListItem[]> {
+  const salons = await prisma.salon.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      memberships: {
+        where: { leftAt: null },
+        include: { user: { select: { id: true, displayName: true, email: true } } },
+      },
+    },
+  });
+
+  return salons.map((s) => ({
+    id: s.id,
+    name: s.name,
+    customerInviteCode: s.customerInviteCode,
+    createdAt: s.createdAt.toISOString(),
+    staff: s.memberships
+      .filter((m) => m.role === "staff")
+      .map((m) => ({ userId: m.user.id, displayName: m.user.displayName, email: m.user.email })),
+    customerCount: s.memberships.filter((m) => m.role === "customer").length,
+  }));
+}

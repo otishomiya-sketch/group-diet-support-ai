@@ -3,23 +3,15 @@ import { NextResponse } from "next/server";
 import { isErrorResponse } from "@/lib/auth-helpers";
 import { requireOperator } from "@/lib/access-control/require-operator";
 import { logAdminAccess } from "@/lib/access-control/audit-log";
-import { createSalon } from "@/lib/salon/salon-admin";
-import { prisma } from "@/lib/prisma";
+import { createSalon, listSalonsForAdmin } from "@/lib/salon/salon-admin";
 
 // 運営(operator)によるサロン作成・一覧。パイロット導入のため自己登録フローは設けない。
 export async function GET() {
   const operator = await requireOperator();
   if (isErrorResponse(operator)) return operator;
 
-  const salons = await prisma.salon.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json({
-    salons: salons.map((s) => ({
-      id: s.id,
-      name: s.name,
-      customerInviteCode: s.customerInviteCode,
-      createdAt: s.createdAt.toISOString(),
-    })),
-  });
+  const salons = await listSalonsForAdmin();
+  return NextResponse.json({ salons });
 }
 
 export async function POST(request: Request) {

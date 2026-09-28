@@ -28,7 +28,13 @@ interface SalonCustomer {
   achievementRate: number;
 }
 
-export function SalonCustomerRow({ customer }: { customer: SalonCustomer }) {
+interface SalonCustomerRowProps {
+  customer: SalonCustomer;
+  /** "/api/salon"(スタッフ用・自分のサロン)または"/api/admin/salon/{id}"(運営用・任意サロン)。 */
+  apiBasePath?: string;
+}
+
+export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: SalonCustomerRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [data, setData] = useState<ActivityData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,7 +50,7 @@ export function SalonCustomerRow({ customer }: { customer: SalonCustomer }) {
       setLoading(true);
       setLoadError(null);
       try {
-        const res = await fetch(`/api/salon/customer/${customer.userId}/activity`);
+        const res = await fetch(`${apiBasePath}/customer/${customer.userId}/activity`);
         const json = await res.json();
         if (!res.ok) {
           setLoadError(json.error ?? "読み込みに失敗しました。");
@@ -61,7 +67,7 @@ export function SalonCustomerRow({ customer }: { customer: SalonCustomer }) {
   async function sendMessage() {
     setSending(true);
     setSendStatus(null);
-    const res = await fetch("/api/salon/message", {
+    const res = await fetch(`${apiBasePath}/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customerUserId: customer.userId, text: messageText }),

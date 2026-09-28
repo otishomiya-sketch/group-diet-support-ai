@@ -21,7 +21,13 @@ interface BulkSendOutcome {
   error?: string;
 }
 
-export function SalonBulkMessage({ customers }: { customers: SalonCustomer[] }) {
+interface SalonBulkMessageProps {
+  customers: SalonCustomer[];
+  /** "/api/salon"(スタッフ用・自分のサロン)または"/api/admin/salon/{id}"(運営用・任意サロン)。 */
+  apiBasePath?: string;
+}
+
+export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: SalonBulkMessageProps) {
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -39,7 +45,7 @@ export function SalonBulkMessage({ customers }: { customers: SalonCustomer[] }) 
 
   useEffect(() => {
     let ignore = false;
-    fetch("/api/salon/templates")
+    fetch(`${apiBasePath}/templates`)
       .then((res) => res.json())
       .then((data) => {
         if (!ignore) setTemplates(data.templates ?? []);
@@ -47,7 +53,7 @@ export function SalonBulkMessage({ customers }: { customers: SalonCustomer[] }) 
     return () => {
       ignore = true;
     };
-  }, [refreshKey]);
+  }, [apiBasePath, refreshKey]);
 
   function toggleCustomer(userId: string) {
     setSelectedCustomerIds((prev) =>
@@ -57,7 +63,7 @@ export function SalonBulkMessage({ customers }: { customers: SalonCustomer[] }) 
 
   async function createTemplate() {
     setCreatingTemplate(true);
-    const res = await fetch("/api/salon/templates", {
+    const res = await fetch(`${apiBasePath}/templates`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle, body: newBody }),
@@ -72,7 +78,7 @@ export function SalonBulkMessage({ customers }: { customers: SalonCustomer[] }) 
   }
 
   async function deleteTemplate(id: string) {
-    await fetch(`/api/salon/templates/${id}`, { method: "DELETE" });
+    await fetch(`${apiBasePath}/templates/${id}`, { method: "DELETE" });
     if (selectedTemplateId === id) setSelectedTemplateId(null);
     setRefreshKey((k) => k + 1);
   }
@@ -81,7 +87,7 @@ export function SalonBulkMessage({ customers }: { customers: SalonCustomer[] }) 
     setSending(true);
     setSendError(null);
     setSendResults(null);
-    const res = await fetch("/api/salon/message/bulk", {
+    const res = await fetch(`${apiBasePath}/message/bulk`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
