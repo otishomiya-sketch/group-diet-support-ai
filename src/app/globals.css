@@ -3,6 +3,25 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* エステサロン向けページ(/salon, /admin/salon)専用の配色トークン。
+     他ページはzinc系のまま、このトークンを使うページだけ暖色系に切り替わる。
+     accent-strong/gold-strongは白文字ボタン用に十分なコントラスト比(4.5:1以上)を確保した濃色。 */
+  --salon-bg: #fbf6f1;
+  --salon-surface: #ffffff;
+  --salon-border: #f0dde2;
+  --salon-ink: #3f3436;
+  --salon-heading: #4a2e35;
+  --salon-muted: #8a7b7e;
+  --salon-accent: #c98a9c;
+  --salon-accent-strong: #9c5a6e;
+  --salon-accent-hover: #84495a;
+  --salon-accent-soft: #f7e9ed;
+  --salon-gold: #c9a66b;
+  --salon-gold-strong: #8a6c37;
+  --salon-gold-hover: #715a2d;
+  --salon-gold-soft: #f5edde;
+  --salon-on-strong: #ffffff;
 }
 
 @theme inline {
@@ -10,12 +29,45 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-salon-bg: var(--salon-bg);
+  --color-salon-surface: var(--salon-surface);
+  --color-salon-border: var(--salon-border);
+  --color-salon-ink: var(--salon-ink);
+  --color-salon-heading: var(--salon-heading);
+  --color-salon-muted: var(--salon-muted);
+  --color-salon-accent: var(--salon-accent);
+  --color-salon-accent-strong: var(--salon-accent-strong);
+  --color-salon-accent-hover: var(--salon-accent-hover);
+  --color-salon-accent-soft: var(--salon-accent-soft);
+  --color-salon-gold: var(--salon-gold);
+  --color-salon-gold-strong: var(--salon-gold-strong);
+  --color-salon-gold-hover: var(--salon-gold-hover);
+  --color-salon-gold-soft: var(--salon-gold-soft);
+  --color-salon-on-strong: var(--salon-on-strong);
+  --font-salon-display: var(--font-salon-serif);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --salon-bg: #241a1d;
+    --salon-surface: #2e2124;
+    --salon-border: #4a343a;
+    --salon-ink: #e8dcda;
+    --salon-heading: #f3e9e5;
+    --salon-muted: #b7a3a6;
+    --salon-accent: #d9a5b3;
+    --salon-accent-strong: #e8b9c5;
+    --salon-accent-hover: #f0cbd4;
+    --salon-accent-soft: #3a282c;
+    --salon-gold: #d9bd87;
+    --salon-gold-strong: #e6cd9e;
+    --salon-gold-hover: #efdcb5;
+    --salon-gold-soft: #362f24;
+    --salon-on-strong: #241a1d;
   }
 }
 

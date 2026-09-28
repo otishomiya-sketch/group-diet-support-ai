@@ -19,7 +19,7 @@ interface Salon {
 }
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
+  "w-full rounded-md border border-salon-border bg-salon-surface px-3 py-2 text-sm text-salon-ink";
 
 export default function AdminSalonPage() {
   const [salons, setSalons] = useState<Salon[] | null>(null);
@@ -111,11 +111,16 @@ export default function AdminSalonPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">サロン管理(運営専用)</h1>
+      <div>
+        <p className="mb-1 text-xs tracking-widest text-salon-gold uppercase">Operator Only</p>
+        <h1 className="font-salon-display text-3xl font-semibold text-salon-heading">サロン管理</h1>
+      </div>
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">新しいサロンを作成</h2>
+      <section className="rounded-2xl border border-salon-border bg-salon-surface p-6 shadow-sm shadow-salon-accent/5">
+        <h2 className="font-salon-display mb-3 text-xl font-semibold text-salon-heading">
+          新しいサロンを作成
+        </h2>
         <form onSubmit={createSalon} className="flex gap-3">
           <input
             className={inputClass}
@@ -127,7 +132,7 @@ export default function AdminSalonPage() {
           <button
             type="submit"
             disabled={creating}
-            className="whitespace-nowrap rounded-full bg-zinc-900 px-5 py-2 text-sm text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-black"
+            className="whitespace-nowrap rounded-full bg-salon-accent-strong px-5 py-2 text-sm text-salon-on-strong hover:bg-salon-accent-hover disabled:opacity-50"
           >
             {creating ? "作成中..." : "作成する"}
           </button>
@@ -136,40 +141,45 @@ export default function AdminSalonPage() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">サロン一覧</h2>
-        {salons && salons.length === 0 && <p className="text-zinc-500">まだサロンがありません。</p>}
+        <h2 className="font-salon-display text-xl font-semibold text-salon-heading">サロン一覧</h2>
+        {salons && salons.length === 0 && <p className="text-salon-muted">まだサロンがありません。</p>}
         {salons?.map((salon) => (
-          <div key={salon.id} className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
+          <div
+            key={salon.id}
+            className="rounded-2xl border border-salon-border bg-salon-surface p-6 shadow-sm shadow-salon-accent/5"
+          >
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{salon.name}</h3>
-              <span className="text-xs text-zinc-500">顧客数 {salon.customerCount}名</span>
+              <h3 className="font-salon-display text-lg font-semibold text-salon-heading">
+                {salon.name}
+              </h3>
+              <span className="text-xs text-salon-muted">顧客数 {salon.customerCount}名</span>
             </div>
 
             <Link
               href={`/admin/salon/${salon.id}`}
-              className="mb-4 inline-flex w-fit items-center gap-1 rounded-full bg-sky-600 px-4 py-1.5 text-xs text-white hover:bg-sky-700"
+              className="mb-4 inline-flex w-fit items-center gap-1 rounded-full bg-salon-accent-strong px-4 py-1.5 text-xs text-salon-on-strong hover:bg-salon-accent-hover"
             >
               顧客管理を開く
             </Link>
 
             <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-              <code className="rounded bg-zinc-100 px-3 py-1 tracking-wider dark:bg-zinc-900">
+              <code className="rounded-full bg-salon-accent-soft px-3 py-1 tracking-wider text-salon-heading">
                 {salon.customerInviteCode}
               </code>
               <button
                 onClick={() => copyInviteLink(salon)}
-                className="rounded-full border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                className="rounded-full border border-salon-border px-3 py-1 text-xs text-salon-ink hover:bg-salon-accent-soft"
               >
                 {copiedSalonId === salon.id ? "コピーしました" : "顧客用招待リンクをコピー"}
               </button>
             </div>
 
-            <p className="mb-1 text-xs font-medium text-zinc-500">スタッフ</p>
+            <p className="mb-1 text-xs font-medium text-salon-muted">スタッフ</p>
             <ul className="mb-3 flex flex-col gap-1">
               {salon.staff.map((s) => (
                 <li
                   key={s.userId}
-                  className="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-1.5 text-sm dark:bg-zinc-900"
+                  className="flex items-center justify-between rounded-md bg-salon-accent-soft/50 px-3 py-1.5 text-sm text-salon-ink"
                 >
                   <span>
                     {s.displayName}({s.email})
@@ -183,7 +193,7 @@ export default function AdminSalonPage() {
                 </li>
               ))}
               {salon.staff.length === 0 && (
-                <li className="text-xs text-zinc-500">まだスタッフがいません。</li>
+                <li className="text-xs text-salon-muted">まだスタッフがいません。</li>
               )}
             </ul>
 
@@ -200,7 +210,7 @@ export default function AdminSalonPage() {
               <button
                 onClick={() => addStaff(salon.id)}
                 disabled={addingStaffFor === salon.id}
-                className="whitespace-nowrap rounded-full border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                className="whitespace-nowrap rounded-full border border-salon-border px-4 py-2 text-sm text-salon-ink hover:bg-salon-accent-soft disabled:opacity-50"
               >
                 追加
               </button>

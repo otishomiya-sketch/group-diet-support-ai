@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
-import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
 import { SalonCustomerRow } from "@/components/salon/SalonCustomerRow";
 import { SalonBulkMessage } from "@/components/salon/SalonBulkMessage";
 
@@ -53,42 +53,47 @@ export default function SalonPage() {
   }
 
   if (salon === undefined) {
-    return <div className="px-6 py-16 text-zinc-500">読み込み中...</div>;
+    return <div className="px-6 py-16 text-salon-muted">読み込み中...</div>;
   }
 
   if (salon === null) {
     return (
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
-        <BackToDashboardLink />
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">サロン管理</h1>
-        <p className="text-zinc-500">このアカウントはサロンのスタッフとして登録されていません。</p>
+        <BackLink />
+        <h1 className="font-salon-display text-3xl font-semibold text-salon-heading">サロン管理</h1>
+        <p className="text-salon-muted">このアカウントはサロンのスタッフとして登録されていません。</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
-      <BackToDashboardLink />
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{salon.name}</h1>
+      <BackLink />
+      <div>
+        <p className="mb-1 text-xs tracking-widest text-salon-gold uppercase">Salon Dashboard</p>
+        <h1 className="font-salon-display text-3xl font-semibold text-salon-heading">{salon.name}</h1>
+      </div>
 
-      <section className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
-        <h2 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50">顧客を招待する</h2>
-        <p className="mb-3 text-sm text-zinc-500">
+      <section className="rounded-2xl border border-salon-border bg-salon-surface p-6 shadow-sm shadow-salon-accent/5">
+        <h2 className="font-salon-display mb-2 text-xl font-semibold text-salon-heading">
+          💌 顧客を招待する
+        </h2>
+        <p className="mb-4 text-sm text-salon-muted">
           このリンクから登録した方は、自動的にこのサロンの顧客として登録されます。
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={copyInviteLink}
-            className="rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-black"
+            className="rounded-full bg-salon-accent-strong px-4 py-2 text-sm text-salon-on-strong hover:bg-salon-accent-hover"
           >
             {linkCopied ? "リンクをコピーしました" : "招待リンクをコピー"}
           </button>
-          <code className="rounded bg-zinc-100 px-3 py-1.5 tracking-wider dark:bg-zinc-900">
+          <code className="rounded-full bg-salon-accent-soft px-3 py-1.5 tracking-wider text-salon-heading">
             {salon.customerInviteCode}
           </code>
           <button
             onClick={copyInviteCode}
-            className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+            className="rounded-full border border-salon-border px-4 py-1.5 text-sm text-salon-ink hover:bg-salon-accent-soft"
           >
             {copied ? "コピーしました" : "コードをコピー"}
           </button>
@@ -98,19 +103,30 @@ export default function SalonPage() {
       <SalonBulkMessage customers={salon.customers} />
 
       <section>
-        <h2 className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">顧客一覧</h2>
-        <p className="mb-3 text-xs text-zinc-500">
+        <h2 className="font-salon-display mb-1 text-xl font-semibold text-salon-heading">顧客一覧</h2>
+        <p className="mb-3 text-xs text-salon-muted">
           「記録を見る」で体重推移・食事の記録(写真含む)を確認できます。
         </p>
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-3">
           {salon.customers.map((c) => (
             <SalonCustomerRow key={c.userId} customer={c} />
           ))}
           {salon.customers.length === 0 && (
-            <p className="text-sm text-zinc-500">まだ顧客が登録されていません。</p>
+            <p className="text-sm text-salon-muted">まだ顧客が登録されていません。</p>
           )}
         </ul>
       </section>
     </div>
+  );
+}
+
+function BackLink() {
+  return (
+    <Link
+      href="/dashboard"
+      className="inline-flex w-fit items-center gap-1 text-sm text-salon-muted hover:text-salon-heading"
+    >
+      ← マイページに戻る
+    </Link>
   );
 }

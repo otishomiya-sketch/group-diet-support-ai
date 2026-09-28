@@ -54,31 +54,36 @@ export default function AdminSalonCustomersPage() {
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
       <Link
         href="/admin/salon"
-        className="inline-flex w-fit items-center gap-1 text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        className="inline-flex w-fit items-center gap-1 text-sm text-salon-muted hover:text-salon-heading"
       >
         ← サロン管理に戻る
       </Link>
 
-      {salon === undefined && !error && <p className="text-zinc-500">読み込み中...</p>}
+      {salon === undefined && !error && <p className="text-salon-muted">読み込み中...</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {salon && (
         <>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{salon.name}</h1>
+          <div>
+            <p className="mb-1 text-xs tracking-widest text-salon-gold uppercase">Customer Management</p>
+            <h1 className="font-salon-display text-3xl font-semibold text-salon-heading">{salon.name}</h1>
+          </div>
 
           <SalonBulkMessage customers={salon.customers} apiBasePath={apiBasePath} />
 
           <section>
-            <h2 className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">顧客一覧</h2>
-            <p className="mb-3 text-xs text-zinc-500">
+            <h2 className="font-salon-display mb-1 text-xl font-semibold text-salon-heading">
+              顧客一覧
+            </h2>
+            <p className="mb-3 text-xs text-salon-muted">
               「記録を見る」で体重推移・食事の記録(写真含む)を確認できます。
             </p>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-3">
               {salon.customers.map((c) => (
                 <SalonCustomerRow key={c.userId} customer={c} apiBasePath={apiBasePath} />
               ))}
               {salon.customers.length === 0 && (
-                <p className="text-sm text-zinc-500">まだ顧客が登録されていません。</p>
+                <p className="text-sm text-salon-muted">まだ顧客が登録されていません。</p>
               )}
             </ul>
           </section>

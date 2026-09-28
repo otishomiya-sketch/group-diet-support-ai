@@ -104,9 +104,9 @@ export default async function DashboardPage() {
         {salonStaffMembership && (
           <Link
             href="/salon"
-            className="rounded-full border border-sky-400 px-5 py-2 text-sky-700 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-300 dark:hover:bg-sky-950"
+            className="rounded-full border border-salon-accent px-5 py-2 text-salon-accent-strong hover:bg-salon-accent-soft"
           >
-            🏪 サロン管理
+            🌸 サロン管理
           </Link>
         )}
       </nav>

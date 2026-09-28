@@ -109,29 +109,29 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
     selectedCustomerIds.length > 0 && (selectedTemplateId !== null || customText.trim().length > 0);
 
   return (
-    <section className="rounded-lg border border-violet-300 bg-violet-50 p-6 dark:border-violet-800 dark:bg-violet-950/30">
-      <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <section className="rounded-2xl border border-salon-border bg-salon-gold-soft/60 p-6 shadow-sm shadow-salon-gold/10">
+      <h2 className="font-salon-display mb-3 text-xl font-semibold text-salon-heading">
         📨 テンプレート一斉送信
       </h2>
 
       <div className="mb-4">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300">定型文テンプレート</p>
+          <p className="text-xs font-medium text-salon-muted">定型文テンプレート</p>
           <button
             onClick={() => setTemplateFormOpen((v) => !v)}
-            className="rounded-full border border-violet-400 px-3 py-1 text-xs text-violet-700 hover:bg-violet-100 dark:text-violet-300 dark:hover:bg-violet-900"
+            className="rounded-full border border-salon-gold px-3 py-1 text-xs text-salon-gold-strong hover:bg-salon-gold-soft"
           >
             + 新規作成
           </button>
         </div>
 
         {templateFormOpen && (
-          <div className="mb-3 flex flex-col gap-2 rounded-md bg-white p-3 dark:bg-zinc-900">
+          <div className="mb-3 flex flex-col gap-2 rounded-xl bg-salon-surface p-3">
             <input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="テンプレート名(例:来月キャンペーン案内)"
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              className="rounded-md border border-salon-border px-3 py-1.5 text-sm text-salon-ink"
             />
             <textarea
               value={newBody}
@@ -139,19 +139,19 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
               rows={3}
               maxLength={1000}
               placeholder="本文"
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              className="rounded-md border border-salon-border px-3 py-1.5 text-sm text-salon-ink"
             />
             <div className="flex gap-2">
               <button
                 onClick={createTemplate}
                 disabled={creatingTemplate || !newTitle.trim() || !newBody.trim()}
-                className="rounded-full bg-violet-600 px-4 py-1.5 text-xs text-white hover:bg-violet-700 disabled:opacity-50"
+                className="rounded-full bg-salon-gold-strong px-4 py-1.5 text-xs text-salon-on-strong hover:bg-salon-gold-hover disabled:opacity-50"
               >
                 保存
               </button>
               <button
                 onClick={() => setTemplateFormOpen(false)}
-                className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-full border border-salon-border px-4 py-1.5 text-xs text-salon-ink hover:bg-salon-gold-soft"
               >
                 キャンセル
               </button>
@@ -165,18 +165,16 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
               key={t.id}
               className={
                 selectedTemplateId === t.id
-                  ? "flex items-center justify-between rounded-md border-2 border-violet-500 bg-white px-3 py-2 dark:bg-zinc-900"
-                  : "flex items-center justify-between rounded-md border border-transparent bg-white px-3 py-2 dark:bg-zinc-900"
+                  ? "flex items-center justify-between rounded-xl border-2 border-salon-gold bg-salon-surface px-3 py-2"
+                  : "flex items-center justify-between rounded-xl border border-transparent bg-salon-surface px-3 py-2"
               }
             >
               <button
                 onClick={() => setSelectedTemplateId(selectedTemplateId === t.id ? null : t.id)}
                 className="flex-1 text-left"
               >
-                <span className="block text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                  {t.title}
-                </span>
-                <span className="block truncate text-xs text-zinc-500">{t.body}</span>
+                <span className="block text-sm font-medium text-salon-heading">{t.title}</span>
+                <span className="block truncate text-xs text-salon-muted">{t.body}</span>
               </button>
               <button
                 onClick={() => deleteTemplate(t.id)}
@@ -187,13 +185,13 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
             </li>
           ))}
           {templates && templates.length === 0 && !templateFormOpen && (
-            <p className="text-xs text-zinc-500">テンプレートがまだありません。</p>
+            <p className="text-xs text-salon-muted">テンプレートがまだありません。</p>
           )}
         </ul>
       </div>
 
       {selectedTemplateId === null && (
-        <label className="mb-4 flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+        <label className="mb-4 flex flex-col gap-1 text-xs font-medium text-salon-muted">
           または、自由入力で送信する本文
           <textarea
             value={customText}
@@ -201,16 +199,16 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
             rows={3}
             maxLength={1000}
             placeholder="テンプレートを選ばない場合はここに入力"
-            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-normal dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded-md border border-salon-border bg-salon-surface px-3 py-1.5 text-sm font-normal text-salon-ink"
           />
         </label>
       )}
 
-      <p className="mb-2 text-xs font-medium text-zinc-600 dark:text-zinc-300">送信先の顧客を選択</p>
-      <ul className="mb-4 flex max-h-56 flex-col gap-1 overflow-y-auto rounded-md bg-white p-2 dark:bg-zinc-900">
+      <p className="mb-2 text-xs font-medium text-salon-muted">送信先の顧客を選択</p>
+      <ul className="mb-4 flex max-h-56 flex-col gap-1 overflow-y-auto rounded-xl bg-salon-surface p-2">
         {customers.map((c) => (
           <li key={c.userId}>
-            <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800">
+            <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-salon-ink hover:bg-salon-gold-soft">
               <input
                 type="checkbox"
                 checked={selectedCustomerIds.includes(c.userId)}
@@ -220,20 +218,22 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
             </label>
           </li>
         ))}
-        {customers.length === 0 && <p className="px-2 py-1 text-xs text-zinc-500">顧客がまだいません。</p>}
+        {customers.length === 0 && (
+          <p className="px-2 py-1 text-xs text-salon-muted">顧客がまだいません。</p>
+        )}
       </ul>
 
       <button
         onClick={sendBulk}
         disabled={!canSend || sending}
-        className="rounded-full bg-violet-600 px-5 py-2 text-sm text-white hover:bg-violet-700 disabled:opacity-50"
+        className="rounded-full bg-salon-gold-strong px-5 py-2 text-sm text-salon-on-strong hover:bg-salon-gold-hover disabled:opacity-50"
       >
         {sending ? "送信中..." : `選択した${selectedCustomerIds.length}名に送信`}
       </button>
 
       {sendError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{sendError}</p>}
       {sendResults && (
-        <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="mt-3 text-sm text-salon-ink">
           送信完了:成功 {sendResults.filter((r) => r.ok).length}件 / 失敗{" "}
           {sendResults.filter((r) => !r.ok).length}件
         </p>

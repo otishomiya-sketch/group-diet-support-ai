@@ -82,22 +82,22 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
   }
 
   return (
-    <li className="rounded-md border border-zinc-200 dark:border-zinc-800">
-      <div className="flex w-full items-center justify-between px-4 py-2">
-        <span className="text-zinc-900 dark:text-zinc-50">{customer.displayName}</span>
+    <li className="overflow-hidden rounded-2xl border border-salon-border bg-salon-surface shadow-sm shadow-salon-accent/5">
+      <div className="flex w-full items-center justify-between px-4 py-3">
+        <span className="font-salon-display text-lg text-salon-heading">{customer.displayName}</span>
         <span className="flex items-center gap-3">
-          <span className="text-xs tabular-nums text-zinc-500">
+          <span className="text-xs tabular-nums text-salon-muted">
             達成率 {customer.achievementRate}%
           </span>
           <button
             onClick={() => setMessageOpen((v) => !v)}
-            className="rounded-full bg-sky-600 px-3 py-1 text-xs text-white hover:bg-sky-700"
+            className="rounded-full bg-salon-accent-strong px-3 py-1 text-xs text-salon-on-strong hover:bg-salon-accent-hover"
           >
             メッセージを送る
           </button>
           <button
             onClick={toggle}
-            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+            className="text-xs text-salon-muted hover:text-salon-heading"
           >
             {expanded ? "閉じる ▲" : "記録を見る ▼"}
           </button>
@@ -105,26 +105,26 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
       </div>
 
       {messageOpen && (
-        <div className="flex flex-col gap-2 border-t border-zinc-200 px-4 py-3 dark:border-zinc-800">
+        <div className="flex flex-col gap-2 border-t border-salon-border bg-salon-accent-soft/40 px-4 py-3">
           <textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             maxLength={1000}
             rows={3}
             placeholder="顧客に送るメッセージを入力"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded-md border border-salon-border bg-salon-surface px-3 py-2 text-sm text-salon-ink"
           />
           <div className="flex gap-2">
             <button
               onClick={sendMessage}
               disabled={sending || !messageText.trim()}
-              className="rounded-full bg-sky-600 px-4 py-1.5 text-xs text-white hover:bg-sky-700 disabled:opacity-50"
+              className="rounded-full bg-salon-accent-strong px-4 py-1.5 text-xs text-salon-on-strong hover:bg-salon-accent-hover disabled:opacity-50"
             >
               {sending ? "送信中..." : "LINEで送信"}
             </button>
             <button
               onClick={() => setMessageOpen(false)}
-              className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              className="rounded-full border border-salon-border px-4 py-1.5 text-xs text-salon-ink hover:bg-salon-accent-soft"
             >
               キャンセル
             </button>
@@ -133,33 +133,29 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
       )}
 
       {sendStatus && (
-        <p className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800">
-          {sendStatus}
-        </p>
+        <p className="border-t border-salon-border px-4 py-2 text-xs text-salon-muted">{sendStatus}</p>
       )}
 
       {expanded && (
-        <div className="border-t border-zinc-200 px-4 py-4 dark:border-zinc-800">
-          {loading && <p className="text-sm text-zinc-400">読み込み中...</p>}
+        <div className="border-t border-salon-border px-4 py-4">
+          {loading && <p className="text-sm text-salon-muted">読み込み中...</p>}
           {loadError && <p className="text-sm text-red-600 dark:text-red-400">{loadError}</p>}
           {data && (
             <>
-              <h3 className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                体重の推移(直近30日)
-              </h3>
+              <h3 className="mb-2 text-sm font-semibold text-salon-heading">体重の推移(直近30日)</h3>
               <WeightTrendChart points={data.weightTrend} emptyMessage="まだ体重の記録がありません。" />
 
-              <h3 className="mb-2 mt-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              <h3 className="mb-2 mt-4 text-sm font-semibold text-salon-heading">
                 食事の記録(直近30日)
               </h3>
               {data.meals.length === 0 ? (
-                <p className="text-sm text-zinc-400">まだ食事の記録がありません。</p>
+                <p className="text-sm text-salon-muted">まだ食事の記録がありません。</p>
               ) : (
                 <ul className="flex max-h-80 flex-col gap-3 overflow-y-auto">
                   {data.meals.map((meal) => (
                     <li
                       key={meal.id}
-                      className="flex gap-3 rounded-md bg-zinc-50 p-2 dark:bg-zinc-900"
+                      className="flex gap-3 rounded-md bg-salon-accent-soft/50 p-2"
                     >
                       {meal.imageUrl && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -170,15 +166,13 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
                         />
                       )}
                       <div className="flex flex-col text-sm">
-                        <span className="text-zinc-800 dark:text-zinc-200">
-                          {meal.foodDescription ?? "(内容不明)"}
-                        </span>
-                        <span className="text-zinc-500">
+                        <span className="text-salon-ink">{meal.foodDescription ?? "(内容不明)"}</span>
+                        <span className="text-salon-muted">
                           {meal.estimatedCalories != null
                             ? `推定 ${meal.estimatedCalories}kcal`
                             : "カロリー推定なし"}
                         </span>
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-salon-muted">
                           {new Date(meal.createdAt).toLocaleString("ja-JP")}
                         </span>
                       </div>
