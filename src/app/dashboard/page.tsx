@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { getUserProfile } from "@/lib/sensitive/user-profile";
 import { calculateBmr, calculateDailyCalorieTarget } from "@/lib/health/bmr";
 import { getCalorieTrend, getWeightTrend } from "@/lib/checkin/trends";
+import { getCurrentSalonStaffMembership } from "@/lib/salon/salon-membership";
 import { TrendCharts } from "@/components/dashboard/TrendCharts";
 import { LineLinkPrompt } from "@/components/dashboard/LineLinkPrompt";
 
@@ -35,9 +36,10 @@ export default async function DashboardPage() {
   const calorieTarget = calculateDailyCalorieTarget(bmr, profile.activityLevel);
   const remainingKg = profile.currentWeight - profile.targetWeight;
 
-  const [weightSeries, calorieSeries] = await Promise.all([
+  const [weightSeries, calorieSeries, salonStaffMembership] = await Promise.all([
     getWeightTrend(session.user.id, TREND_WINDOW_DAYS),
     getCalorieTrend(session.user.id, TREND_WINDOW_DAYS),
+    getCurrentSalonStaffMembership(session.user.id),
   ]);
 
   return (
@@ -99,6 +101,14 @@ export default async function DashboardPage() {
         >
           設定
         </Link>
+        {salonStaffMembership && (
+          <Link
+            href="/salon"
+            className="rounded-full border border-sky-400 px-5 py-2 text-sky-700 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-300 dark:hover:bg-sky-950"
+          >
+            🏪 サロン管理
+          </Link>
+        )}
       </nav>
     </div>
   );
