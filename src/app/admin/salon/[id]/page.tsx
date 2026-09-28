@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 
 import { SalonCustomerRow } from "@/components/salon/SalonCustomerRow";
 import { SalonBulkMessage } from "@/components/salon/SalonBulkMessage";
+import { SalonReservations } from "@/components/salon/SalonReservations";
 
 interface SalonCustomer {
   userId: string;
@@ -68,6 +69,8 @@ export default function AdminSalonCustomersPage() {
             <p className="mb-1 text-xs tracking-widest text-salon-gold uppercase">Customer Management</p>
             <h1 className="font-salon-display text-3xl font-semibold text-salon-heading">{salon.name}</h1>
           </div>
+
+          <SalonReservations customers={salon.customers} apiBasePath={apiBasePath} />
 
           <SalonBulkMessage customers={salon.customers} apiBasePath={apiBasePath} />
 

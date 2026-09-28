@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { SalonCustomerRow } from "@/components/salon/SalonCustomerRow";
 import { SalonBulkMessage } from "@/components/salon/SalonBulkMessage";
+import { SalonReservations } from "@/components/salon/SalonReservations";
 
 interface SalonCustomer {
   userId: string;
@@ -99,6 +100,8 @@ export default function SalonPage() {
           </button>
         </div>
       </section>
+
+      <SalonReservations customers={salon.customers} />
 
       <SalonBulkMessage customers={salon.customers} />
 

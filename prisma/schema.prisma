@@ -384,6 +384,8 @@ model Salon {
 
   memberships      SalonMembership[]
   messageTemplates SalonMessageTemplate[]
+  reservations     SalonReservation[]
+  tickets          SalonTicket[]
 }
 
 model SalonMembership {
@@ -415,5 +417,75 @@ model SalonMessageTemplate {
 
   @@index([salonId])
   @@index([salonId, scene])
+}
+
+// ---------------------------------------------------------------------------
+// SalonReservation(運営判断:スタッフが電話・対面等で受けた予約を代行登録する
+// 簡易カレンダー。顧客の自己予約は対象外)
+// ---------------------------------------------------------------------------
+model SalonReservation {
+  id              String    @id @default(cuid())
+  salonId         String
+  customerUserId  String
+  menuName        String
+  scheduledAt     DateTime
+  durationMinutes Int       @default(60)
+  status          String    @default("scheduled") // "scheduled" | "completed" | "cancelled"
+  note            String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  salon       Salon                   @relation(fields: [salonId], references: [id])
+  consumption SalonTicketConsumption?
+
+  @@index([salonId, scheduledAt])
+  @@index([customerUserId, scheduledAt])
+}
+
+// ---------------------------------------------------------------------------
+// SalonTicket(運営判断:施術チケット・前受金管理。回数券(remainingSessions)と
+// 金額ベースの前受金残高(remainingAmount)の両方に対応し、ticketごとにどちらか
+// 一方または両方を追跡できる。実際の決済(入金)はスタッフが店頭で受け取り、
+// このアプリでは「入金済みとして記録する」だけで、オンライン決済は扱わない
+// (9.4節:決済連携は法務確認待ちのため)。
+// ---------------------------------------------------------------------------
+model SalonTicket {
+  id             String @id @default(cuid())
+  salonId        String
+  customerUserId String
+  name           String // 例:「フェイシャル10回パック」
+
+  totalSessions     Int? // 回数券として管理する場合の総回数
+  remainingSessions Int? // 残り回数
+  totalAmount       Int? // 前受金として管理する場合の総額(円)
+  remainingAmount   Int? // 残高(円)
+  pricePerSession   Int? // 1回消化あたりの消費金額(円)。金額管理時に使用
+
+  status      String    @default("active") // "active" | "used_up" | "expired" | "cancelled"
+  purchasedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  note        String?
+
+  salon        Salon                    @relation(fields: [salonId], references: [id])
+  consumptions SalonTicketConsumption[]
+
+  @@index([salonId, customerUserId, status])
+}
+
+// チケット消化履歴。予約完了と同時に自動で1件作成される。
+model SalonTicketConsumption {
+  id            String   @id @default(cuid())
+  ticketId      String
+  reservationId String?  @unique
+  sessionsUsed  Int      @default(0)
+  amountUsed    Int      @default(0)
+  consumedAt    DateTime @default(now())
+
+  ticket      SalonTicket       @relation(fields: [ticketId], references: [id])
+  reservation SalonReservation? @relation(fields: [reservationId], references: [id])
+
+  @@index([ticketId])
 }
 
