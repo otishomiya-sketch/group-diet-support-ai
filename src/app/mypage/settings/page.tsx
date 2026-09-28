@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 import { BackToDashboardLink } from "@/components/nav/BackToDashboardLink";
+import { LogoutButton } from "@/components/nav/LogoutButton";
 
 const inputClass =
   "w-full rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900";
@@ -91,7 +92,10 @@ export default function MyPageSettings() {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
       <BackToDashboardLink />
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">設定</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">設定</h1>
+        <LogoutButton className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900" />
+      </div>
       {saved && <p className="text-sm text-green-600 dark:text-green-400">保存しました。</p>}
 
       <section className="flex flex-col gap-4 rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">

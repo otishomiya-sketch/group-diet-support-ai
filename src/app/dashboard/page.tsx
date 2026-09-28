@@ -8,6 +8,7 @@ import { getCalorieTrend, getWeightTrend } from "@/lib/checkin/trends";
 import { getCurrentSalonStaffMembership } from "@/lib/salon/salon-membership";
 import { TrendCharts } from "@/components/dashboard/TrendCharts";
 import { LineLinkPrompt } from "@/components/dashboard/LineLinkPrompt";
+import { LogoutButton } from "@/components/nav/LogoutButton";
 
 const TREND_WINDOW_DAYS = 90;
 
@@ -109,6 +110,7 @@ export default async function DashboardPage() {
             🌸 サロン管理
           </Link>
         )}
+        <LogoutButton className="rounded-full border border-zinc-300 px-5 py-2 text-zinc-500 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900" />
       </nav>
     </div>
   );
