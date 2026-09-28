@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { generateInviteCode } from "@/lib/group/invite-code";
+import { createDefaultSalonMessageTemplates } from "@/lib/salon/salon-message";
 
 // 運営(operator)がパイロット導入するサロンを作成する。自己登録フローは設けない
 // (1店舗での試験導入のため)。顧客のみcustomerInviteCode経由で自己登録する。
@@ -11,7 +12,9 @@ export async function createSalon(name: string) {
     customerInviteCode = generateInviteCode();
   }
 
-  return prisma.salon.create({ data: { name, customerInviteCode } });
+  const salon = await prisma.salon.create({ data: { name, customerInviteCode } });
+  await createDefaultSalonMessageTemplates(salon.id);
+  return salon;
 }
 
 export type AddSalonStaffResult =

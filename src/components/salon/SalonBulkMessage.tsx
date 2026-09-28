@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { SALON_MESSAGE_SCENES, salonMessageSceneLabel } from "@/lib/salon/salon-message-scenes";
 
 interface SalonCustomer {
   userId: string;
@@ -10,6 +12,7 @@ interface SalonCustomer {
 
 interface Template {
   id: string;
+  scene: string;
   title: string;
   body: string;
   createdAt: string;
@@ -27,17 +30,21 @@ interface SalonBulkMessageProps {
   apiBasePath?: string;
 }
 
+const SCENE_FILTER_ALL = "all";
+
 export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: SalonBulkMessageProps) {
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [sceneFilter, setSceneFilter] = useState<string>(SCENE_FILTER_ALL);
 
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
+  const [newScene, setNewScene] = useState<string>(SALON_MESSAGE_SCENES[0].value);
   const [newTitle, setNewTitle] = useState("");
   const [newBody, setNewBody] = useState("");
   const [creatingTemplate, setCreatingTemplate] = useState(false);
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [customText, setCustomText] = useState("");
+  const [messageText, setMessageText] = useState("");
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [sendResults, setSendResults] = useState<BulkSendOutcome[] | null>(null);
@@ -55,10 +62,21 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
     };
   }, [apiBasePath, refreshKey]);
 
+  const visibleTemplates = useMemo(() => {
+    if (!templates) return [];
+    if (sceneFilter === SCENE_FILTER_ALL) return templates;
+    return templates.filter((t) => t.scene === sceneFilter);
+  }, [templates, sceneFilter]);
+
   function toggleCustomer(userId: string) {
     setSelectedCustomerIds((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId],
     );
+  }
+
+  function applyTemplate(template: Template) {
+    setSelectedTemplateId(template.id);
+    setMessageText(template.body);
   }
 
   async function createTemplate() {
@@ -66,7 +84,7 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
     const res = await fetch(`${apiBasePath}/templates`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newTitle, body: newBody }),
+      body: JSON.stringify({ scene: newScene, title: newTitle, body: newBody }),
     });
     setCreatingTemplate(false);
     if (res.ok) {
@@ -79,7 +97,9 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
 
   async function deleteTemplate(id: string) {
     await fetch(`${apiBasePath}/templates/${id}`, { method: "DELETE" });
-    if (selectedTemplateId === id) setSelectedTemplateId(null);
+    if (selectedTemplateId === id) {
+      setSelectedTemplateId(null);
+    }
     setRefreshKey((k) => k + 1);
   }
 
@@ -93,7 +113,7 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
       body: JSON.stringify({
         customerUserIds: selectedCustomerIds,
         templateId: selectedTemplateId,
-        text: selectedTemplateId ? undefined : customText,
+        text: messageText,
       }),
     });
     const json = await res.json();
@@ -105,8 +125,7 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
     setSendResults(json.results);
   }
 
-  const canSend =
-    selectedCustomerIds.length > 0 && (selectedTemplateId !== null || customText.trim().length > 0);
+  const canSend = selectedCustomerIds.length > 0 && messageText.trim().length > 0;
 
   return (
     <section className="rounded-2xl border border-salon-border bg-salon-gold-soft/60 p-6 shadow-sm shadow-salon-gold/10">
@@ -115,8 +134,8 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
       </h2>
 
       <div className="mb-4">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-medium text-salon-muted">定型文テンプレート</p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-salon-muted">利用シーンで選ぶ</p>
           <button
             onClick={() => setTemplateFormOpen((v) => !v)}
             className="rounded-full border border-salon-gold px-3 py-1 text-xs text-salon-gold-strong hover:bg-salon-gold-soft"
@@ -125,8 +144,48 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
           </button>
         </div>
 
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSceneFilter(SCENE_FILTER_ALL)}
+            className={
+              sceneFilter === SCENE_FILTER_ALL
+                ? "rounded-full bg-salon-gold-strong px-3 py-1 text-xs text-salon-on-strong"
+                : "rounded-full border border-salon-border px-3 py-1 text-xs text-salon-ink hover:bg-salon-gold-soft"
+            }
+          >
+            すべて
+          </button>
+          {SALON_MESSAGE_SCENES.map((s) => (
+            <button
+              key={s.value}
+              onClick={() => setSceneFilter(s.value)}
+              className={
+                sceneFilter === s.value
+                  ? "rounded-full bg-salon-gold-strong px-3 py-1 text-xs text-salon-on-strong"
+                  : "rounded-full border border-salon-border px-3 py-1 text-xs text-salon-ink hover:bg-salon-gold-soft"
+              }
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
         {templateFormOpen && (
           <div className="mb-3 flex flex-col gap-2 rounded-xl bg-salon-surface p-3">
+            <label className="flex flex-col gap-1 text-xs font-medium text-salon-muted">
+              利用シーン
+              <select
+                value={newScene}
+                onChange={(e) => setNewScene(e.target.value)}
+                className="rounded-md border border-salon-border px-3 py-1.5 text-sm font-normal text-salon-ink"
+              >
+                {SALON_MESSAGE_SCENES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
@@ -160,7 +219,7 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
         )}
 
         <ul className="flex flex-col gap-1">
-          {(templates ?? []).map((t) => (
+          {visibleTemplates.map((t) => (
             <li
               key={t.id}
               className={
@@ -169,10 +228,10 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
                   : "flex items-center justify-between rounded-xl border border-transparent bg-salon-surface px-3 py-2"
               }
             >
-              <button
-                onClick={() => setSelectedTemplateId(selectedTemplateId === t.id ? null : t.id)}
-                className="flex-1 text-left"
-              >
+              <button onClick={() => applyTemplate(t)} className="flex-1 text-left">
+                <span className="mb-0.5 inline-block rounded-full bg-salon-gold-soft px-2 py-0.5 text-[10px] text-salon-gold-strong">
+                  {salonMessageSceneLabel(t.scene)}
+                </span>
                 <span className="block text-sm font-medium text-salon-heading">{t.title}</span>
                 <span className="block truncate text-xs text-salon-muted">{t.body}</span>
               </button>
@@ -184,25 +243,26 @@ export function SalonBulkMessage({ customers, apiBasePath = "/api/salon" }: Salo
               </button>
             </li>
           ))}
-          {templates && templates.length === 0 && !templateFormOpen && (
-            <p className="text-xs text-salon-muted">テンプレートがまだありません。</p>
+          {templates && visibleTemplates.length === 0 && !templateFormOpen && (
+            <p className="text-xs text-salon-muted">このシーンのテンプレートはまだありません。</p>
           )}
         </ul>
       </div>
 
-      {selectedTemplateId === null && (
-        <label className="mb-4 flex flex-col gap-1 text-xs font-medium text-salon-muted">
-          または、自由入力で送信する本文
-          <textarea
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            rows={3}
-            maxLength={1000}
-            placeholder="テンプレートを選ばない場合はここに入力"
-            className="rounded-md border border-salon-border bg-salon-surface px-3 py-1.5 text-sm font-normal text-salon-ink"
-          />
-        </label>
-      )}
+      <label className="mb-4 flex flex-col gap-1 text-xs font-medium text-salon-muted">
+        送信する本文(テンプレートを選ぶと自動入力されます。自由に編集できます)
+        <textarea
+          value={messageText}
+          onChange={(e) => {
+            setMessageText(e.target.value);
+            setSelectedTemplateId(null);
+          }}
+          rows={4}
+          maxLength={1000}
+          placeholder="テンプレートを選ぶか、直接入力してください"
+          className="rounded-md border border-salon-border bg-salon-surface px-3 py-1.5 text-sm font-normal text-salon-ink"
+        />
+      </label>
 
       <p className="mb-2 text-xs font-medium text-salon-muted">送信先の顧客を選択</p>
       <ul className="mb-4 flex max-h-56 flex-col gap-1 overflow-y-auto rounded-xl bg-salon-surface p-2">

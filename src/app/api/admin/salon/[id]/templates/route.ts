@@ -27,9 +27,10 @@ export async function POST(
   const body = await request.json().catch(() => null);
   const title = typeof body?.title === "string" ? body.title : "";
   const bodyText = typeof body?.body === "string" ? body.body : "";
+  const scene = typeof body?.scene === "string" ? body.scene : "general";
 
   try {
-    const template = await createSalonMessageTemplate(salonId, title, bodyText);
+    const template = await createSalonMessageTemplate(salonId, title, bodyText, scene);
     return NextResponse.json({ template }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "テンプレートの作成に失敗しました。";

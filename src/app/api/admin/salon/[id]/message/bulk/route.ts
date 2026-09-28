@@ -20,7 +20,7 @@ export async function POST(
   const body = await request.json().catch(() => null);
   const customerUserIds: unknown = body?.customerUserIds;
   const templateId = typeof body?.templateId === "string" ? body.templateId : null;
-  const freeText = typeof body?.text === "string" ? body.text : "";
+  const text = typeof body?.text === "string" ? body.text : "";
 
   if (!Array.isArray(customerUserIds) || customerUserIds.some((id) => typeof id !== "string")) {
     return NextResponse.json({ error: "送信先の顧客を選択してください。" }, { status: 400 });
@@ -35,7 +35,6 @@ export async function POST(
     return NextResponse.json({ error: "対象にこのサロンの顧客でないユーザーが含まれています。" }, { status: 403 });
   }
 
-  let text = freeText;
   if (templateId) {
     const template = await prisma.salonMessageTemplate.findFirst({
       where: { id: templateId, salonId },
@@ -43,7 +42,6 @@ export async function POST(
     if (!template) {
       return NextResponse.json({ error: "テンプレートが見つかりません。" }, { status: 404 });
     }
-    text = template.body;
   }
 
   const results = await sendSalonMessageBulk(targetIds, text);

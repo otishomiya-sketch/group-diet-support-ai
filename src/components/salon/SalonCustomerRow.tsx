@@ -28,6 +28,13 @@ interface SalonCustomer {
   achievementRate: number;
 }
 
+interface Template {
+  id: string;
+  scene: string;
+  title: string;
+  body: string;
+}
+
 interface SalonCustomerRowProps {
   customer: SalonCustomer;
   /** "/api/salon"(スタッフ用・自分のサロン)または"/api/admin/salon/{id}"(運営用・任意サロン)。 */
@@ -44,6 +51,7 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendStatus, setSendStatus] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Template[] | null>(null);
 
   async function toggle() {
     if (!expanded && !data && !loading) {
@@ -62,6 +70,16 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
       }
     }
     setExpanded((v) => !v);
+  }
+
+  async function openMessagePanel() {
+    if (!messageOpen && templates === null) {
+      fetch(`${apiBasePath}/templates`)
+        .then((res) => res.json())
+        .then((json) => setTemplates(json.templates ?? []))
+        .catch(() => setTemplates([]));
+    }
+    setMessageOpen((v) => !v);
   }
 
   async function sendMessage() {
@@ -90,7 +108,7 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
             達成率 {customer.achievementRate}%
           </span>
           <button
-            onClick={() => setMessageOpen((v) => !v)}
+            onClick={openMessagePanel}
             className="rounded-full bg-salon-accent-strong px-3 py-1 text-xs text-salon-on-strong hover:bg-salon-accent-hover"
           >
             メッセージを送る
@@ -106,6 +124,26 @@ export function SalonCustomerRow({ customer, apiBasePath = "/api/salon" }: Salon
 
       {messageOpen && (
         <div className="flex flex-col gap-2 border-t border-salon-border bg-salon-accent-soft/40 px-4 py-3">
+          {templates && templates.length > 0 && (
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const template = templates.find((t) => t.id === e.target.value);
+                if (template) setMessageText(template.body);
+                e.target.value = "";
+              }}
+              className="rounded-md border border-salon-border bg-salon-surface px-3 py-1.5 text-sm text-salon-ink"
+            >
+              <option value="" disabled>
+                テンプレートから選ぶ(任意)
+              </option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+          )}
           <textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}

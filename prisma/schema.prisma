@@ -405,6 +405,8 @@ model SalonMembership {
 model SalonMessageTemplate {
   id        String   @id @default(cuid())
   salonId   String
+  // 利用シーン: "visit_thanks" | "next_visit" | "campaign" | "winback" | "birthday" | "general"
+  scene     String   @default("general")
   title     String
   body      String
   createdAt DateTime @default(now())
@@ -412,5 +414,6 @@ model SalonMessageTemplate {
   salon Salon @relation(fields: [salonId], references: [id])
 
   @@index([salonId])
+  @@index([salonId, scene])
 }
 

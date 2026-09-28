@@ -6,7 +6,9 @@ import { getCurrentSalonStaffMembership, getSalonCustomerUserIds } from "@/lib/s
 import { sendSalonMessageBulk } from "@/lib/salon/salon-message";
 import { logAdminAccess } from "@/lib/access-control/audit-log";
 
-// スタッフからテンプレート(または自由入力文)を複数顧客へ一斉送信する。
+// スタッフが(テンプレートを叩き台に編集した、または自由に書いた)本文を複数顧客へ一斉送信する。
+// 送信されるのはあくまでクライアントが最終的に確定した本文であり、templateIdは
+// 「どのテンプレートを参考にしたか」を記録する監査ログ用の情報に過ぎない。
 export async function POST(request: Request) {
   const session = await requireSessionUserId();
   if (isErrorResponse(session)) return session;
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const customerUserIds: unknown = body?.customerUserIds;
   const templateId = typeof body?.templateId === "string" ? body.templateId : null;
-  const freeText = typeof body?.text === "string" ? body.text : "";
+  const text = typeof body?.text === "string" ? body.text : "";
 
   if (!Array.isArray(customerUserIds) || customerUserIds.some((id) => typeof id !== "string")) {
     return NextResponse.json({ error: "送信先の顧客を選択してください。" }, { status: 400 });
@@ -34,7 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "対象にこのサロンの顧客でないユーザーが含まれています。" }, { status: 403 });
   }
 
-  let text = freeText;
   if (templateId) {
     const template = await prisma.salonMessageTemplate.findFirst({
       where: { id: templateId, salonId: staffMembership.salonId },
@@ -42,7 +43,6 @@ export async function POST(request: Request) {
     if (!template) {
       return NextResponse.json({ error: "テンプレートが見つかりません。" }, { status: 404 });
     }
-    text = template.body;
   }
 
   const results = await sendSalonMessageBulk(targetIds, text);
